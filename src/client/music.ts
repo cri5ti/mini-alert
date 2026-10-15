@@ -1,7 +1,6 @@
 import lobby1Url from '../../assets/music/lobby1.mp3?url'
 import lobby2Url from '../../assets/music/lobby2.mp3?url'
 
-const VOLUME = 0.4
 const tracks = import.meta.glob('../../assets/music/*.mp3', {
   eager: true,
   query: '?url',
@@ -9,12 +8,14 @@ const tracks = import.meta.glob('../../assets/music/*.mp3', {
 })
 
 const LOBBY = [lobby1Url, lobby2Url]
-const BATTLE = Object.entries(tracks)
+export const BATTLE = Object.entries(tracks)
   .filter(([path]) => !/\/lobby\d+\.mp3$/.test(path))
   .map((entry) => entry[1])
 
 export class Music {
   private readonly audio = new Audio()
+  private output: GainNode | null = null
+  private volume = 1
   private queue: string[] = []
   private index = 0
   private mode: 'silent' | 'lobby' | 'match' = 'silent'
@@ -22,8 +23,16 @@ export class Music {
   private blocked = false
 
   constructor() {
-    this.audio.volume = VOLUME
     this.audio.addEventListener('ended', () => this.advance())
+  }
+
+  /** iOS ignores a media element's volume, so once audio unlocks the level lives on a gain the element plays through. */
+  connect(context: AudioContext) {
+    this.output = context.createGain()
+    this.output.gain.value = this.volume
+    this.output.connect(context.destination)
+    context.createMediaElementSource(this.audio).connect(this.output)
+    this.audio.volume = 1
   }
 
   lobby() {
@@ -46,6 +55,12 @@ export class Music {
     if (this.mode === 'silent') return
     this.mode = 'silent'
     this.audio.pause()
+  }
+
+  setVolume(volume: number) {
+    this.volume = volume
+    if (this.output) this.output.gain.value = volume
+    else this.audio.volume = volume
   }
 
   setMuted(muted: boolean) {

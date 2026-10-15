@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Lobby mock</title>
+    <style>
+      .mock-phones {
+        position: fixed;
+        inset: 0;
+        overflow: auto;
+        display: flex;
+        align-items: flex-start;
+        gap: 24px;
+        padding: 24px;
+        font: 13px/1.4 ui-monospace, monospace;
+        color: #8f9a84;
+      }
+
+      .mock-phones figure {
+        margin: 0;
+        display: grid;
+        gap: 8px;
+      }
+
+      .mock-phones iframe {
+        border: 1px solid #3b4636;
+        border-radius: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="lobby"></div>
+    <script type="module" src="/src/client/lobby-mock.ts"></script>
+  </body>
+</html>

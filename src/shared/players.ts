@@ -6,3 +6,8 @@ export const PLAYER_COLORS = [
 export function playerColor(id: number): number {
   return PLAYER_COLORS[(id - 1) % PLAYER_COLORS.length]
 }
+
+/** Whether `owner`'s units and buildings are hostile to `viewer`; owner 0 is neutral. */
+export function hostile(viewer: number, owner: number): boolean {
+  return owner !== 0 && owner !== viewer
+}

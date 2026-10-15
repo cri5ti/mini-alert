@@ -16,9 +16,6 @@ export function bindTrace(root: HTMLElement) {
   const rows = list
   const summary = total
   return {
-    hide() {
-      root.hidden = true
-    },
     paint(frame: TracePaint) {
       const sum = frame.samples.reduce((acc, sample) => acc + sample.ms, 0) || 1
       let angle = 0
@@ -47,7 +44,7 @@ export function bindTrace(root: HTMLElement) {
         rows.append(row)
       }
       summary.textContent = `${work.toFixed(1)} / ${frame.budget.toFixed(1)} ms`
-      root.hidden = false
+      root.hidden = frame.samples.length === 0
     },
   }
 }

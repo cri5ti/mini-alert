@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { captureDuration, cityContains, layoutCities, lostStreets, populationOf, projectCity, settledCity, StreetKind, type CityLayout } from '../shared/cities.ts'
 import { Flight } from '../shared/flight.ts'
-import { Terrain, scarGain, scarStrength, scarTerrain } from '../shared/tiles.ts'
+import { SCAR_FADE, Terrain, scarGain, scarStrength, scarTerrain } from '../shared/tiles.ts'
 import { MED_TANK, WeaponKind, UnitTypeId } from '../shared/unit-types.ts'
 import { Game } from './game.ts'
 import { CREDIT_PER_POPULATION } from './player.ts'
@@ -337,11 +337,11 @@ describe('combat', () => {
       for (let dx = 0; dx < 2; dx++) expect(scarStrength(game.world.terrainAt(4 + dx, 4 + dy))).toBe(3)
     }
     expect(game.world.terrainAt(8, 8)).toBe(Terrain.Land)
-    game.tick(5)
+    game.tick(SCAR_FADE)
     expect(scarStrength(game.world.terrainAt(4, 4))).toBe(2)
-    game.tick(5)
+    game.tick(SCAR_FADE)
     expect(scarStrength(game.world.terrainAt(4, 4))).toBe(1)
-    game.tick(5)
+    game.tick(SCAR_FADE)
     expect(game.world.terrainAt(4, 4)).toBe(Terrain.Land)
     expect(scarStrength(game.world.terrainAt(5, 5))).toBe(0)
   })

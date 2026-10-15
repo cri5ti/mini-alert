@@ -8,7 +8,7 @@ import type { TileCoord } from '../../shared/tiles.ts'
 import { Fog } from './fog.ts'
 import { CityLayer } from './cities.ts'
 import { Minimap, type MinimapCommand } from './minimap.ts'
-import { createRadarWatch, radarContact } from './radar.ts'
+import { createRadarWatch, radarContact, type ContactKind } from './radar.ts'
 import { PropField } from './props.ts'
 import { Stage, cameraYaw } from './stage.ts'
 import { Particles } from './particles.ts'
@@ -67,6 +67,7 @@ export class GameView {
   private readonly wrecks: Wreck[] = []
   private readonly pings: { mesh: Mesh; age: number }[] = []
   private readonly radar = createRadarWatch()
+  private alert: ((kind: ContactKind) => void) | null = null
   private readonly rallyMark: Group
   private readonly hallRing: Mesh
   private shotDt = 0
@@ -219,6 +220,10 @@ export class GameView {
 
   setMinimapHover(hover: (tile: TileCoord | null) => void) {
     this.minimap?.setHover(hover)
+  }
+
+  setAlert(alert: (kind: ContactKind) => void) {
+    this.alert = alert
   }
 
   dispose() {
@@ -473,8 +478,11 @@ export class GameView {
     this.cities?.present(layouts, cities)
     this.clearGround(cleared)
     const contact = radarContact(this.radar, performance.now(), playerId, units, cities)
-    if (contact) this.minimap?.blip(contact.x, contact.z)
-    this.minimap?.draw(living, selectedIds, this.stage.groundViewport(), this.fog?.mask, cities, rally)
+    if (contact) {
+      this.minimap?.blip(contact.x, contact.z, contact.kind)
+      this.alert?.(contact.kind)
+    }
+    this.minimap?.draw(living, selectedIds, playerId, this.stage.groundViewport(), this.fog?.mask, cities, rally)
     this.stage.draw()
   }
 

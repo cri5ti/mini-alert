@@ -4,7 +4,7 @@ import type { CitySight } from '../shared/vision.ts'
 import { SCAR_CHANCE, SCAR_FADE, SCAR_MAX, Terrain, scarGain, scarStrength, scarTerrain, tileCenter, type TileCoord } from '../shared/tiles.ts'
 import { bayFacing, bayTile, baysFree, Flight, openBay } from '../shared/flight.ts'
 import { domainOf, MoveDomain, spanOf, UNIT_TYPES, UnitTypeId, yardOf } from '../shared/unit-types.ts'
-import { SIM_STEP } from '../shared/motion.ts'
+import { atRest, SIM_STEP } from '../shared/motion.ts'
 import { planMoves } from '../shared/route.ts'
 import { PathFinder } from './path/pathfinder.ts'
 import { instantBuilds } from './instant.ts'
@@ -426,7 +426,7 @@ export class Game {
     return unit
   }
 
-  /** Moves the units toward the tile; ground and sea units then advance `lag` steps, as the ordering client already shows them. */
+  /** Moves the units toward the tile; ground and sea units at rest then advance `lag` steps, as the ordering client already shows them. */
   orderMove(playerId: number, unitIds: readonly number[], tile: TileCoord, lag = 0): boolean {
     let moved = false
     const surface: Unit[] = []
@@ -438,12 +438,14 @@ export class Game {
         if (unit.orderMove(tile, this.pathfinder, this.units)) moved = true
       } else surface.push(unit)
     }
+    const resting = new Set(surface.filter(atRest))
     const movers = surface.map((unit) => ({ id: unit.id, tile: unit.tile, domain: domainOf(unit.type) }))
     const routes = planMoves(this.pathfinder, movers, tile)
     for (const unit of surface) {
       const path = routes.get(unit.id)
       if (!path || !unit.travel(path)) continue
       moved = true
+      if (!resting.has(unit)) continue
       for (let i = 0; i < lag; i++) unit.step(SIM_STEP, this.pathfinder, this.units)
     }
     return moved
@@ -561,29 +563,30 @@ export class Game {
     this.units.splice(0, this.units.length, ...this.units.filter((unit) => unit.health > 0))
   }
 
+  /** Floats are float32, as the wire carries them, so the host's shadows and AI seats hold what clients decode. */
   private snapshot(unit: Unit): UnitSnapshot {
     return {
       id: unit.id,
       typeId: unit.typeId,
       ownerId: unit.ownerId,
       color: this.player(unit.ownerId)?.color ?? 0xffffff,
-      x: unit.pos.x,
-      z: unit.pos.z,
-      facing: unit.facing,
-      turretYaw: unit.type.weapon.turretRate > 0 ? unit.turretYaw : unit.facing,
-      speed: unit.speed,
-      health: unit.health,
+      x: Math.fround(unit.pos.x),
+      z: Math.fround(unit.pos.z),
+      facing: Math.fround(unit.facing),
+      turretYaw: Math.fround(unit.type.weapon.turretRate > 0 ? unit.turretYaw : unit.facing),
+      speed: Math.fround(unit.speed),
+      health: Math.fround(unit.health),
       tileX: unit.tile.x,
       tileY: unit.tile.y,
       path: unit.path.map((tile) => ({ x: tile.x, y: tile.y })),
       goal: unit.path.length > 0 ? { ...unit.path[unit.path.length - 1] } : null,
       attackId: unit.attackId,
-      attackPoint: unit.attackPoint ? { x: unit.attackPoint.x, z: unit.attackPoint.z } : null,
-      progress: unit.progress,
+      attackPoint: unit.attackPoint ? { x: Math.fround(unit.attackPoint.x), z: Math.fround(unit.attackPoint.z) } : null,
+      progress: Math.fround(unit.progress),
       home: unit.home ? { x: unit.home.x, y: unit.home.y } : null,
       returning: unit.returning,
       flight: unit.flight,
-      altitude: unit.altitude,
+      altitude: Math.fround(unit.altitude),
       orbit: unit.orbit ? { x: unit.orbit.x, y: unit.orbit.y } : null,
       bay: unit.bay,
       rounds: unit.rounds,

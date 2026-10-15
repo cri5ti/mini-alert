@@ -32,6 +32,14 @@ export function loadSaves(lobby: Lobby, dir = saveDir()) {
       console.error('skip hall save', err)
     }
   }
+  const requestsPath = join(root, 'requests.json')
+  if (existsSync(requestsPath)) {
+    try {
+      lobby.loadBoard(JSON.parse(readFileSync(requestsPath, 'utf8')))
+    } catch (err) {
+      console.error('skip requests save', err)
+    }
+  }
   let restored = 0
   for (const name of readdirSync(root)) {
     if (gameFileId(name) === null) continue
@@ -74,6 +82,7 @@ export function saveSaves(lobby: Lobby, dir = saveDir()) {
     unlinkSync(join(root, name))
   }
   atomicWrite(join(root, 'hall.json'), lobby.savedHall())
+  atomicWrite(join(root, 'requests.json'), lobby.savedBoard())
 }
 
 function atomicWrite(file: string, value: unknown) {

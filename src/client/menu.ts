@@ -2,7 +2,6 @@ import changelog from '../../changelog.md?raw'
 import { version } from '../../package.json'
 
 const SEEN_VERSION = 'rts.seen-version'
-const MUSIC_KEY = 'rts.music'
 
 const HELP = `# Shortcuts
 
@@ -11,9 +10,9 @@ const HELP = `# Shortcuts
 - **Move** — with units selected, click open ground
 - **Attack** — click an enemy. Hold Ctrl or ⌘ and click one of your units to fire on it, or click the ground to shell that spot. Units also fire at enemies they can see
 - **Build** — Factory, Turret, Airport, or Helipad goes on open ground beside a city you own. A shipyard goes on water beside a city you own. Building places one of the houses a city grows, only on a tile that city could grow. The price appears when you aim at that city. Right-click cancels
-- **Orders** — \`F1\`, \`F2\`, and so on press the build and train tiles in the bar, left to right and top to bottom. Shift with the key drops the latest order of that type
-- **City hall** — click the hall of a city you hold. A slider leans that city toward money or growth
-- **Train** — select a factory, airport, helipad, or shipyard. The bar shows what that building makes. Click a tile to queue it there. Units already in production stay listed under Queued, so they can be cancelled
+- **Orders** — the Build panel sorts its tiles into the Base, Land, Air, and Sea tabs. \`F1\`, \`F2\`, and so on press the tiles of the open tab, left to right and top to bottom. Shift with the key drops the latest order of that type
+- **City hall** — click the hall of a city you hold. The Selected panel at the bottom left shows its slider, which leans that city toward money or growth
+- **Train** — select a factory, airport, helipad, or shipyard, and the Build panel opens its tab: Land for a factory, Air for an airport or helipad, Sea for a shipyard. Click a tile to queue it there. The Queue line at the bottom of the panel has a chip for each type in production, from every building; click one to drop the latest order of that type
 - **Waypoint** — with a factory selected, click the ground. Finished units move there
 - **Ranges** — hold Ctrl or ⌘ with one unit selected to show its attack range and sight
 - **Return** — \`Z\` sends selected jets and gunships back to their airport or helipad
@@ -36,7 +35,7 @@ Cities you hold grow on their own. You do not need a unit in the city. Streets e
 
 ## Building
 
-Factories, airports, helipads, and turrets take time to finish, and they can only be placed on open ground beside a city you own. A shipyard goes on water beside a city you own. An airport, helipad, or shipyard can be placed only after a factory is finished. An airport is a 3×3 field with a center runway and six parking spots, and it can hold six jets. A building is density 1, the same kind a young city grows, and it can only go on a tile that city could grow one. It appears at once and takes the full price. Aim at the city and the price appears: 100 while that city's population is 6 or less, and after that 100 times how much population it has beyond 5. It adds 1 population. A finished factory trains scouts, medium tanks, heavy tanks, and artillery. An airport trains jets, a helipad trains gunships, and a shipyard trains cruisers onto the water beside it. Select that building to see what it trains. Each one keeps its own queue, and a finished unit comes out of the building that trained it. The build tiles appear once that building is finished. Click it to queue one, and click again to queue another. The corner number is the queue once more than the one being built is waiting, for units and for structures. Shift-click or right-click drops the latest queued order of that type. Credits are spent while a unit or structure is built, and construction pauses if you run out.
+Factories, airports, helipads, and turrets take time to finish, and they can only be placed on open ground beside a city you own. A shipyard goes on water beside a city you own. An airport, helipad, or shipyard can be placed only after a factory is finished. An airport is a 3×3 field with a center runway and six parking spots, and it can hold six jets. A building is density 1, the same kind a young city grows, and it can only go on a tile that city could grow one. It appears at once and takes the full price. Aim at the city and the price appears: 100 while that city's population is 6 or less, and after that 100 times how much population it has beyond 5. It adds 1 population. A finished factory trains scouts, medium tanks, heavy tanks, and artillery. An airport trains jets, a helipad trains gunships, and a shipyard trains cruisers onto the water beside it. Select that building to see what it trains. Each one keeps its own queue, and a finished unit comes out of the building that trained it. Every tile of the open tab is shown, and a tile that cannot be used says why: Needs a factory for an airport, helipad, or shipyard before a factory is finished, Select a factory (or an airport, a helipad, a shipyard) until the building that trains it is selected, Not finished while that building goes up, Needs population when your army has no room for it, and Apron full when the airport's spots are taken. Click a tile to queue one, and click again to queue another. The number in a tile's top-left corner counts its orders, at the selected building for units, once one of them is waiting to start. Shift-click or right-click drops the latest queued order of that type, for units only at the selected building. Credits are spent while a unit or structure is built, and construction pauses if you run out.
 
 Jets taxi from their spot onto the center runway, roll, climb, and circle the ordered tile until you send them back. Each carries five rockets and fires only after it is in the air. A rocket climbs as it flies. Each one hits twice as hard as a heavy tank shell, with a smaller splash, and the jet waits two seconds between shots. When the rack is empty the jet returns to the airport that launched it, lands, and taxis to its spot to reload. Click the airport, or press Z, to send selected aircraft home. A finished airport takes any of your jets that have no airport. A destroyed jet frees its spot. Gunships climb off the helipad, hover, and turn before they fly. Click the helipad to bring one back down. Cruisers spin in place, then pick up speed slowly, and they only travel on water. Vehicles and turrets shoot enemies and buildings of a city another commander holds. They leave neutral cities alone. Shots scatter more at long range, and more again when the shooter is moving. Shells splash, knock down trees, scar the ground, and bring down those buildings and streets. A shot aimed at an aircraft splashes only other aircraft. Artillery reaches farther and is easy to lose. Scouts are fast and light. Tanks turn in place. A friendly unit with nothing to do steps off a tile another unit needs; a unit already on its way is left to move, and the one behind waits.
 
@@ -45,7 +44,15 @@ Jets taxi from their spot onto the center runway, roll, climb, and circle the or
 Fog covers ground you have not seen. Finished units reveal a circle around them, and a city you own reveals ten tiles around its center. Enemies outside that sight stay hidden. Ground you have already walked stays dim after you look away.
 `
 
-export function bindMenu(actions: { onMusic?(on: boolean): void; onSurrender?(): void } = {}): void {
+type MenuActions = {
+  onMusic?(on: boolean): void
+  onSounds?(on: boolean): void
+  onMusicVolume?(volume: number): void
+  onSoundsVolume?(volume: number): void
+  onSurrender?(): void
+}
+
+export function bindMenu(actions: MenuActions = {}): void {
   const bar = document.querySelector<HTMLElement>('#menubar')
   const menu = document.querySelector<HTMLElement>('#menu')
   const sheet = document.querySelector<HTMLElement>('#sheet')
@@ -53,16 +60,37 @@ export function bindMenu(actions: { onMusic?(on: boolean): void; onSurrender?():
   const body = document.querySelector<HTMLElement>('#sheet-body')
   if (!bar || !menu || !sheet || !title || !body) return
 
-  const musicToggle = bar.querySelector<HTMLElement>('[data-toggle="music"]')
-  if (musicToggle && !musicOn()) {
-    setPressed(musicToggle, false)
-    actions.onMusic?.(false)
+  const settings: Record<string, ((on: boolean) => void) | undefined> = { music: actions.onMusic, sounds: actions.onSounds }
+  for (const toggle of bar.querySelectorAll<HTMLElement>('[data-toggle]')) {
+    const name = toggle.dataset.toggle
+    if (!name || settingOn(name)) continue
+    setPressed(toggle, false)
+    settings[name]?.(false)
   }
 
-  const closeMenu = () => menu.classList.remove('open')
+  const volumes: Record<string, ((volume: number) => void) | undefined> = {
+    musicVolume: actions.onMusicVolume,
+    soundsVolume: actions.onSoundsVolume,
+  }
+  for (const slider of bar.querySelectorAll<HTMLInputElement>('input[data-volume]')) {
+    const name = slider.dataset.volume
+    const readout = slider.parentElement?.querySelector('output')
+    if (!name || !readout) continue
+    const apply = () => {
+      readout.textContent = `${slider.value}%`
+      volumes[name]?.(slider.valueAsNumber / 100)
+    }
+    const remembered = volumeSetting(name)
+    if (remembered !== null) slider.value = String(remembered)
+    apply()
+    slider.addEventListener('input', () => {
+      rememberVolume(name, slider.valueAsNumber)
+      apply()
+    })
+  }
 
   const openSheet = (label: string, markdown: string) => {
-    closeMenu()
+    closeMenu(menu)
     title.textContent = label
     body.innerHTML = renderMarkdown(stripMatchingTitle(markdown, label))
     sheet.hidden = false
@@ -75,7 +103,7 @@ export function bindMenu(actions: { onMusic?(on: boolean): void; onSurrender?():
 
   bar.addEventListener('click', (event) => {
     const target = event.target
-    if (!(target instanceof HTMLElement)) return
+    if (!(target instanceof Element)) return
     const opener = target.closest<HTMLElement>('[data-open]')
     if (opener?.dataset.open === 'menu') {
       menu.classList.toggle('open')
@@ -89,8 +117,14 @@ export function bindMenu(actions: { onMusic?(on: boolean): void; onSurrender?():
       openSheet('Help', HELP)
       return
     }
+    if (opener?.dataset.open === 'fullscreen') {
+      closeMenu(menu)
+      if (document.fullscreenElement) void document.exitFullscreen()
+      else void document.documentElement.requestFullscreen()
+      return
+    }
     if (target.closest('[data-dismiss]')) {
-      closeMenu()
+      closeMenu(menu)
       actions.onSurrender?.()
       return
     }
@@ -98,10 +132,10 @@ export function bindMenu(actions: { onMusic?(on: boolean): void; onSurrender?():
     if (!toggle) return
     const on = toggle.getAttribute('aria-pressed') !== 'true'
     setPressed(toggle, on)
-    if (toggle.dataset.toggle === 'music') {
-      rememberMusic(on)
-      actions.onMusic?.(on)
-    }
+    const name = toggle.dataset.toggle
+    if (!name) return
+    rememberSetting(name, on)
+    settings[name]?.(on)
   })
 
   sheet.addEventListener('click', (event) => {
@@ -112,32 +146,53 @@ export function bindMenu(actions: { onMusic?(on: boolean): void; onSurrender?():
   window.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return
     if (!sheet.hidden) closeSheet()
-    else closeMenu()
+    else closeMenu(menu)
   })
 
   window.addEventListener('pointerdown', (event) => {
     if (!menu.classList.contains('open')) return
     const target = event.target
     if (target instanceof Node && menu.contains(target)) return
-    closeMenu()
+    closeMenu(menu)
   })
 
   if (seenVersion() !== version) openSheet('Changelog', changelog)
 }
 
-export function musicOn(store: Storage = localStorage): boolean {
+export function closeMenu(menu: HTMLElement) {
+  menu.classList.remove('open')
+}
+
+export function settingOn(name: string, store: Storage = localStorage): boolean {
+  return read(name, store) !== 'off'
+}
+
+export function rememberSetting(name: string, on: boolean, store: Storage = localStorage) {
+  write(name, on ? 'on' : 'off', store)
+}
+
+export function volumeSetting(name: string, store: Storage = localStorage): number | null {
+  const stored = read(name, store)
+  return stored === null ? null : Number(stored)
+}
+
+export function rememberVolume(name: string, percent: number, store: Storage = localStorage) {
+  write(name, String(percent), store)
+}
+
+function read(name: string, store: Storage): string | null {
   try {
-    return store.getItem(MUSIC_KEY) !== 'off'
+    return store.getItem(`rts.${name}`)
   } catch {
-    return true
+    return null
   }
 }
 
-export function rememberMusic(on: boolean, store: Storage = localStorage) {
+function write(name: string, value: string, store: Storage) {
   try {
-    store.setItem(MUSIC_KEY, on ? 'on' : 'off')
+    store.setItem(`rts.${name}`, value)
   } catch {
-    // Storage can be blocked. The toggle still applies for this visit.
+    // Storage can be blocked. The setting still applies for this visit.
   }
 }
 

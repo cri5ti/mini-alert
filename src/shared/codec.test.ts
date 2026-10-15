@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { Game } from '../server/game.ts'
+import { World } from '../server/world.ts'
 import { decodeClientMessage, decodeServerFrame, encodeClientMessage, encodeServerFrame } from './codec.ts'
+import { SIM_STEP } from './motion.ts'
 import { ClientMessageKind, ServerEventKind, type ServerFrame } from './protocol.ts'
 import { Terrain } from './tiles.ts'
 import { UnitTypeId, WeaponKind } from './unit-types.ts'
@@ -138,5 +141,19 @@ describe('protobuf frames', () => {
     expect(back?.events[1]).toMatchObject({ unit: { path: [{ x: 2, y: 2 }, { x: 3, y: 3 }, { x: 3, y: 4 }], goal: { x: 3, y: 4 } } })
     expect(back?.events[2]).toMatchObject({ city: { layout: { tiles: layout.tiles }, state: { ruins: state.ruins } } })
     expect(back?.events[3]).toMatchObject({ city: { layout: null } })
+  })
+
+  it("carries a moving unit's snapshot through a frame unchanged at every tick", () => {
+    const game = new Game(new World(24, 12))
+    const player = game.addPlayer()
+    const tank = game.spawn(player, UnitTypeId.MedTank, { x: 1, y: 2 }, Math.PI / 2)
+    expect(game.orderMove(player.id, [tank.id], { x: 19, y: 9 })).toBe(true)
+    for (let tick = 1; tick <= 240; tick++) {
+      game.tick(SIM_STEP)
+      const [unit] = game.unitSnapshots()
+      const back = decodeServerFrame(encodeServerFrame({ tick, ack: 0, events: [{ kind: ServerEventKind.UnitMotion, unit }] }))
+      expect(back?.events).toEqual([{ kind: ServerEventKind.UnitMotion, unit }])
+    }
+    expect(tank.tile).toEqual({ x: 19, y: 9 })
   })
 })

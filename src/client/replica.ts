@@ -1,6 +1,6 @@
 import { buildingCost, canPlaceCityBuilding, cityContains, eachBuildingTile, footprintNearCity, HALL_SPAN, populationOf, settledCity, type CityLayout } from '../shared/cities.ts'
 import { footprintCovers, tileOccupied } from '../shared/footprint.ts'
-import { flightLine, SIM_STEP, SNAPSHOT_GAP, stepMotion, timeScale, turnToward, wrapAngle, type MotionState } from '../shared/motion.ts'
+import { atRest, flightLine, holdInRange, SIM_STEP, SNAPSHOT_GAP, stepMotion, timeScale, turnToward, wrapAngle, type MotionState } from '../shared/motion.ts'
 import {
   ServerEventKind,
   type CityRecord,
@@ -15,7 +15,7 @@ import {
   type WorldSnapshot,
 } from '../shared/protocol.ts'
 import { Terrain, isWalkableTerrain, type TileCoord } from '../shared/tiles.ts'
-import { domainOf, Locomotion, MoveDomain, spanOf, UNIT_TYPES, UnitTypeId } from '../shared/unit-types.ts'
+import { domainOf, Locomotion, MoveDomain, spanOf, UNIT_TYPES, UnitTypeId, WeaponKind, type UnitType } from '../shared/unit-types.ts'
 import { planMoves, type RouteMap } from '../shared/route.ts'
 
 const CATCHUP_STEPS = 8
@@ -47,9 +47,30 @@ type Shown = {
   seen: number
 }
 
+const enum Logged {
+  Frame = 0,
+  Move = 1,
+  Attack = 2,
+}
+
+/** Routes `planMoves` returned, never handed to a unit, and what it planned them from: `routeInputs`, and `open` as of both revisions. */
+type Plan = { inputs: number[]; open: Uint8Array; terrainRevision: number; cityRevision: number; routes: Map<number, TileCoord[]> }
+
+type MoveGuess = { kind: Logged.Move; unitIds: readonly number[]; tile: TileCoord; plan: Plan | null }
+
+type Guess =
+  | MoveGuess
+  | { kind: Logged.Attack; unitIds: readonly number[]; target: { x: number; z: number }; targetId: number | null }
+
+type Entry = { kind: Logged.Frame; frame: ServerFrame } | Guess
+
+/** A tick's units after its step and after each frame applied at it, and its frames and guesses in the order they apply. */
+type Moment = { tick: number; units: UnitSnapshot[]; log: Entry[] }
+
 export class Replica {
   playerId: number | null = null
   world: WorldSnapshot | null = null
+  /** In id order, as the server steps its units, so a tile two units enter in one tick goes to the same unit. */
   units: UnitSnapshot[] = []
   credits = 0
   training: TrainJob[] = []
@@ -93,6 +114,14 @@ export class Replica {
   private readonly trainingRate = new Map<number, number>()
   private readonly drawnUnits: UnitSnapshot[] = []
   private drawPass = 0
+  private readonly history: Moment[] | null
+  private unrecorded = false
+  private rewinding = false
+
+  /** With `rollback`, a frame up to REPLAY_LIMIT ticks late re-runs every unit from its tick, not only the units it carries. */
+  constructor(options: { rollback?: boolean } = {}) {
+    this.history = options.rollback ? [] : null
+  }
 
   reset() {
     this.playerId = null
@@ -130,6 +159,8 @@ export class Replica {
     this.accumulator = 0
     this.askedTick = -SNAPSHOT_GAP
     this.shown.clear()
+    this.history?.splice(0)
+    this.unrecorded = false
     this.settle(Infinity)
   }
 
@@ -144,13 +175,95 @@ export class Replica {
       if (frame.tick - this.localTick > SNAPSHOT_GAP) this.closeTo(frame.tick)
       return
     } else if (this.world && !this.closeTo(frame.tick)) return
-    this.applyFrame(frame)
+    if (snapshot) {
+      this.applyFrame(frame)
+      this.restart()
+    } else if (frame.tick >= this.localTick || !this.rewind(frame)) {
+      this.applyFrame(frame)
+      this.logFrame(frame)
+    }
   }
 
   private applyFrame(frame: ServerFrame) {
     this.frameOccupancy = null
     for (const event of frame.events) this.applyEvent(event, frame.tick)
     this.settle(frame.ack)
+  }
+
+  private momentAt(tick: number): Moment | undefined {
+    const history = this.history
+    return history && history.length > 0 ? history[tick - history[0].tick] : undefined
+  }
+
+  private restart() {
+    this.history?.splice(0, Infinity, { tick: this.localTick, units: [], log: [] })
+    this.unrecorded = true
+  }
+
+  private logFrame(frame: ServerFrame) {
+    this.momentAt(this.localTick)?.log.push({ kind: Logged.Frame, frame })
+    this.unrecorded = true
+  }
+
+  /** Copies the units into the current tick's moment if a step or a frame changed them since the last copy. */
+  private keep() {
+    if (!this.unrecorded) return
+    this.unrecorded = false
+    const moment = this.momentAt(this.localTick)
+    if (moment) moment.units = this.units.map(keptUnit)
+  }
+
+  /**
+   * Re-runs every unit from the tick of a frame stamped behind `localTick`: the frame applies on that tick's units and
+   * joins its log after the tick's frames, ahead of the guesses that followed them, then each later tick steps and
+   * re-applies its log. Drawn poses blend in each unit's net offset.
+   */
+  private rewind(frame: ServerFrame): boolean {
+    const history = this.history
+    const moment = this.momentAt(frame.tick)
+    if (!history || !moment) return false
+    const was = new Map<number, Pose>()
+    for (const unit of this.units) was.set(unit.id, poseOf(unit))
+    this.rewinding = true
+    this.units = moment.units.map(keptUnit)
+    this.localTick = moment.tick
+    this.applyFrame(frame)
+    this.unrecorded = true
+    let at = moment.log.length
+    while (at > 0 && moment.log[at - 1].kind !== Logged.Frame) at -= 1
+    moment.log.splice(at, 0, { kind: Logged.Frame, frame })
+    this.replay(moment.log.slice(at + 1))
+    for (const later of history.slice(history.indexOf(moment) + 1)) {
+      this.keep()
+      this.localTick = later.tick
+      this.stepUnits(SIM_STEP)
+      this.unrecorded = true
+      this.replay(later.log)
+    }
+    this.rewinding = false
+    const jumps = new Map<number, number>()
+    for (const unit of this.units) {
+      const pose = was.get(unit.id)
+      if (pose) jumps.set(unit.id, this.blend(unit, pose))
+    }
+    for (const event of frame.events) {
+      const jump = event.kind === ServerEventKind.UnitMotion ? jumps.get(event.unit.id) : undefined
+      if (jump !== undefined) this.onCorrection?.(jump)
+    }
+    return true
+  }
+
+  private replay(log: readonly Entry[]) {
+    for (const entry of log) {
+      if (entry.kind !== Logged.Frame) {
+        this.keep()
+        this.applyGuess(entry)
+        continue
+      }
+      this.frameOccupancy = null
+      for (const event of entry.frame.events) if (changesUnits(event)) this.applyEvent(event, entry.frame.tick)
+      this.unrecorded = true
+    }
   }
 
   expectTraining(seq: number, typeId: UnitTypeId, yardId: number) {
@@ -219,11 +332,25 @@ export class Replica {
   }
 
   private step() {
+    this.keep()
     this.localTick += 1
+    for (const unit of this.units) {
+      const shown = this.shown.get(unit.id)
+      if (shown) shown.before = poseOf(unit)
+    }
     this.stepUnits(SIM_STEP)
+    const history = this.history
+    if (history) {
+      history.push({ tick: this.localTick, units: [], log: [] })
+      if (history.length > REPLAY_LIMIT + 1) history.shift()
+    }
+    this.unrecorded = true
     let due = 0
     while (due < this.held.length && this.held[due].tick <= this.localTick) due += 1
-    for (const frame of this.held.splice(0, due)) this.applyFrame(frame)
+    for (const frame of this.held.splice(0, due)) {
+      this.applyFrame(frame)
+      this.logFrame(frame)
+    }
   }
 
   /** Where `drawn` poses units between the step before `localTick` (0) and `localTick` (1). */
@@ -433,52 +560,115 @@ export class Replica {
     return open && !this.buildingBlocks().has(`${tile.x},${tile.y}`)
   }
 
-  /** Plans the move the server will plan for the same order, from what this player knows of the map. Returns each path's end tile. */
+  /** Plans the move the server will plan for the same order, from what this player knows of the map, and starts the surface units at rest on it; one on the move keeps its course and target until the server answers. Returns the end tile of every surface unit's route. */
   predictMove(unitIds: readonly number[], tile: TileCoord): TileCoord[] {
-    const surface: UnitSnapshot[] = []
-    for (const unit of this.ordered(unitIds)) {
-      unit.attackId = null
-      unit.attackPoint = null
-      const type = UNIT_TYPES[unit.typeId]
-      if (type.topSpeed > 0 && domainOf(type) !== MoveDomain.Air) surface.push(unit)
-    }
-    const map = this.routeMap()
-    if (!map || surface.length === 0) return []
-    const movers = surface.map((unit) => ({ id: unit.id, tile: { x: unit.tileX, y: unit.tileY }, domain: domainOf(UNIT_TYPES[unit.typeId]) }))
-    const routes = planMoves(map, movers, tile)
+    const guess: MoveGuess = { kind: Logged.Move, unitIds, tile, plan: null }
+    this.record(guess)
+    this.planMove(guess, true)
     const goals: TileCoord[] = []
-    for (const unit of surface) {
-      const path = routes.get(unit.id)
-      if (!path || path.length === 0) continue
-      unit.path = path
-      unit.goal = { ...path[path.length - 1] }
-      goals.push(unit.goal)
-    }
+    for (const path of guess.plan?.routes.values() ?? []) if (path.length > 0) goals.push({ ...path[path.length - 1] })
     return goals
   }
 
-  /** The map as this player knows it: unexplored tiles count as open, city buildings and units as the server stamps them. */
-  private routeMap(): RouteMap | null {
+  /** Points ordered units at the target and leads those at rest and out of range toward it; a unit on the move keeps its course, and without a turret its target, until the server answers. */
+  predictAttack(unitIds: readonly number[], target: { x: number; z: number }, targetId: number | null) {
+    const guess: Guess = { kind: Logged.Attack, unitIds, target: { x: target.x, z: target.z }, targetId }
+    this.record(guess)
+    this.applyGuess(guess)
+  }
+
+  private record(guess: Guess) {
+    this.keep()
+    this.momentAt(this.localTick)?.log.push(guess)
+  }
+
+  private applyGuess(guess: Guess) {
+    if (guess.kind === Logged.Move) this.planMove(guess, false)
+    else this.aim(guess.unitIds, guess.target, guess.targetId)
+  }
+
+  /** Starts the surface units at rest on the guess's routes; with none at rest, it plans them only when `always`. */
+  private planMove(guess: MoveGuess, always: boolean) {
+    const surface: UnitSnapshot[] = []
+    const resting: UnitSnapshot[] = []
+    let domains = 0
+    for (const unit of this.ordered(guess.unitIds)) {
+      const type = UNIT_TYPES[unit.typeId]
+      if (type.topSpeed > 0 && domainOf(type) !== MoveDomain.Air) {
+        surface.push(unit)
+        domains |= 1 << domainOf(type)
+        if (!atRest(unit)) continue
+        resting.push(unit)
+      }
+      unit.attackId = null
+      unit.attackPoint = null
+    }
     const world = this.world
-    if (!world) return null
-    const { width, height } = world
-    const blocked = new Uint8Array(width * height)
+    if (!world || surface.length === 0 || (!always && resting.length === 0)) return
+    const inputs = this.routeInputs(surface)
+    if (!guess.plan || !sameValues(guess.plan.inputs, inputs) || !this.openHolds(guess.plan, world, domains)) {
+      const open = this.openTiles(world, domains)
+      const movers = surface.map((unit) => ({ id: unit.id, tile: { x: unit.tileX, y: unit.tileY }, domain: domainOf(UNIT_TYPES[unit.typeId]) }))
+      const routes = planMoves(this.routeMap(world, open), movers, guess.tile)
+      guess.plan = { inputs, open, terrainRevision: this.terrainRevision, cityRevision: this.cityRevision, routes }
+    }
+    for (const unit of resting) {
+      const path = guess.plan.routes.get(unit.id)
+      if (!path || path.length === 0) continue
+      unit.path = path.slice()
+      unit.goal = { ...path[path.length - 1] }
+    }
+  }
+
+  /** The movers and each unit `routeMap` stamps, by id, type and tile. */
+  private routeInputs(surface: readonly UnitSnapshot[]): number[] {
+    const inputs = [surface.length]
+    for (const unit of surface) inputs.push(unit.id, unit.typeId, unit.tileX, unit.tileY)
+    for (const unit of this.units) if (grounded(unit)) inputs.push(unit.id, unit.typeId, unit.tileX, unit.tileY)
+    return inputs
+  }
+
+  /** Whether the tiles open to a plan's movers still are; rebuilds them only when the map or the cities changed since. */
+  private openHolds(plan: Plan, world: WorldSnapshot, domains: number): boolean {
+    if (plan.terrainRevision === this.terrainRevision && plan.cityRevision === this.cityRevision) return true
+    if (!sameValues(plan.open, this.openTiles(world, domains))) return false
+    plan.terrainRevision = this.terrainRevision
+    plan.cityRevision = this.cityRevision
+    return true
+  }
+
+  /** Per tile, bit `1 << domain` for each of `domains` that may stand there: unexplored tiles count as open, city buildings as closed. */
+  private openTiles(world: WorldSnapshot, domains: number): Uint8Array {
+    const { width, height, terrain, known } = world
+    const ground = domains & (1 << MoveDomain.Ground)
+    const water = domains & (1 << MoveDomain.Water)
+    const open = new Uint8Array(terrain.length)
+    for (let index = 0; index < open.length; index++) {
+      const tile = terrain[index]
+      if (known[index] === 0) open[index] = domains
+      else if (tile === Terrain.Water || tile === Terrain.Lake) open[index] = water
+      else if (isWalkableTerrain(tile)) open[index] = ground
+    }
+    for (const tile of this.cleared) open[tile.y * width + tile.x] |= ground
     for (const city of this.settledLayouts()) {
-      if (city) {
-        for (const building of city.buildings) {
-          eachBuildingTile(building, (x, y) => {
-            if (x >= 0 && y >= 0 && x < width && y < height) blocked[y * width + x] = 1
-          })
-        }
+      if (!city) continue
+      for (const building of city.buildings) {
+        eachBuildingTile(building, (x, y) => {
+          if (x >= 0 && y >= 0 && x < width && y < height) open[y * width + x] = 0
+        })
       }
     }
-    const cleared = new Uint8Array(width * height)
-    for (const tile of this.cleared) cleared[tile.y * width + tile.x] = 1
+    return open
+  }
+
+  /** The map as this player knows it: unexplored tiles count as open, city buildings and units as the server stamps them. */
+  private routeMap(world: WorldSnapshot, open: Uint8Array): RouteMap {
+    const { width, height } = world
     const holders = new Int32Array(width * height)
     const soft = new Uint8Array(width * height)
     for (const unit of this.units) {
+      if (!grounded(unit)) continue
       const type = UNIT_TYPES[unit.typeId]
-      if (unit.health <= 0 || domainOf(type) === MoveDomain.Air) continue
       const span = spanOf(type)
       for (let y = Math.max(0, unit.tileY); y < Math.min(height, unit.tileY + span.y); y++) {
         for (let x = Math.max(0, unit.tileX); x < Math.min(width, unit.tileX + span.x); x++) {
@@ -492,12 +682,7 @@ export class Replica {
       height,
       terrainOpen(x, y, domain) {
         if (x < 0 || y < 0 || x >= width || y >= height) return false
-        const index = y * width + x
-        if (blocked[index] === 1) return false
-        if (domain === MoveDomain.Air || world.known[index] === 0) return true
-        const terrain = world.terrain[index]
-        if (domain === MoveDomain.Water) return terrain === Terrain.Water || terrain === Terrain.Lake
-        return isWalkableTerrain(terrain) || cleared[index] === 1
+        return (open[y * width + x] & (1 << domain)) !== 0
       },
       occupant(x, y) {
         const id = holders[y * width + x]
@@ -509,13 +694,14 @@ export class Replica {
     }
   }
 
-  /** Points ordered units at the target and leads those out of range toward it. */
-  predictAttack(unitIds: readonly number[], target: { x: number; z: number }, targetId: number | null) {
+  private aim(unitIds: readonly number[], target: { x: number; z: number }, targetId: number | null) {
     for (const unit of this.ordered(unitIds)) {
+      const type = UNIT_TYPES[unit.typeId]
+      const moving = !atRest(unit)
+      if (moving && type.weapon.turretRate <= 0) continue
       unit.attackId = targetId
       unit.attackPoint = targetId === null ? { x: target.x, z: target.z } : null
-      const range = UNIT_TYPES[unit.typeId].weapon.range
-      if (Math.hypot(target.x - unit.x, target.z - unit.z) > range) this.lead(unit, { x: Math.floor(target.x), y: Math.floor(target.z) })
+      if (!moving && Math.hypot(target.x - unit.x, target.z - unit.z) > type.weapon.range) this.lead(unit, { x: Math.floor(target.x), y: Math.floor(target.z) })
     }
   }
 
@@ -532,7 +718,6 @@ export class Replica {
     const type = UNIT_TYPES[unit.typeId]
     const domain = domainOf(type)
     if (type.topSpeed <= 0 || domain === MoveDomain.Air) return
-    if (unit.goal && Math.max(Math.abs(unit.goal.x - tile.x), Math.abs(unit.goal.y - tile.y)) <= 2) return
     const lead = flightLine({ x: unit.tileX, y: unit.tileY }, tile).slice(0, LEAD_TILES)
     if (lead.length === 0 || !lead.every((step) => this.passable(step, domain))) return
     unit.path = lead
@@ -689,12 +874,12 @@ export class Replica {
   private applyMotion(next: UnitSnapshot, tick: number) {
     const unit = this.unit(next.id)
     if (!unit) {
-      this.units.push(copyUnit(next))
+      let at = this.units.length
+      while (at > 0 && this.units[at - 1].id > next.id) at -= 1
+      this.units.splice(at, 0, copyUnit(next))
       return
     }
-    const shown = this.shown.get(unit.id)
-    const was = shown ? poseOf(shown.view) : poseOf(unit)
-    const from = { x: unit.x, z: unit.z }
+    const was = poseOf(unit)
     unit.x = next.x
     unit.z = next.z
     unit.facing = next.facing
@@ -721,24 +906,26 @@ export class Replica {
       const occupied = this.frameOccupancy ?? (this.frameOccupancy = this.occupancy())
       for (let i = 0; i < behind; i++) this.stepUnit(unit, occupied, SIM_STEP)
     }
-    this.onCorrection?.(Math.hypot(unit.x - from.x, unit.z - from.z))
-    if (!shown) return
-    shown.before = poseOf(unit)
-    const jump = Math.hypot(was.x - unit.x, was.z - unit.z)
-    shown.drift = jump > TELEPORT_DISTANCE ? still() : {
-      x: was.x - unit.x,
-      z: was.z - unit.z,
-      facing: wrapAngle(was.facing - unit.facing),
-      turretYaw: wrapAngle(was.turretYaw - unit.turretYaw),
-      altitude: was.altitude - (unit.altitude ?? 0),
+    if (!this.rewinding) this.onCorrection?.(this.blend(unit, was))
+  }
+
+  /** Shifts a unit's drawn interpolation by its move from `was`, so only that offset fades in; returns the distance moved. */
+  private blend(unit: UnitSnapshot, was: Pose): number {
+    const offset = offsetOf(was, poseOf(unit))
+    const jump = Math.hypot(offset.x, offset.z)
+    const shown = this.shown.get(unit.id)
+    if (!shown) return jump
+    if (jump > TELEPORT_DISTANCE) {
+      shown.before = poseOf(unit)
+      shown.drift = still()
+    } else {
+      shiftPose(shown.before, offset, 1)
+      shiftPose(shown.drift, offset, -1)
     }
+    return jump
   }
 
   private stepUnits(dt: number) {
-    for (const unit of this.units) {
-      const shown = this.shown.get(unit.id)
-      if (shown) shown.before = poseOf(unit)
-    }
     const occupied = this.occupancy()
     for (const unit of this.units) this.stepUnit(unit, occupied, dt)
     this.aimTurrets(dt)
@@ -769,6 +956,13 @@ export class Replica {
       nearestDist = dist
     }
     return nearest
+  }
+
+  /** The ground point a unit attacks, else its attack target while alive. */
+  private attackAim(unit: UnitSnapshot): { x: number; z: number } | null {
+    if (unit.attackPoint) return unit.attackPoint
+    const target = unit.attackId === null ? undefined : this.unit(unit.attackId)
+    return target && target.health > 0 ? target : null
   }
 
   private occupancy(): Map<string, number> {
@@ -803,6 +997,8 @@ export class Replica {
       orbitY: unit.orbit?.y,
       bay: unit.bay !== undefined && unit.bay >= 0 ? unit.bay : undefined,
     }
+    const aim = type.weapon.turretRate > 0 || rearming(type, unit) ? null : this.attackAim(unit)
+    if (aim && holdInRange(state, type, aim, dt)) state.loiter = false
     stepMotion(state, type, dt, (x, y) => this.tileBlocked(occupied, unit.id, type.locomotion, x, y))
     const span = spanOf(type)
     if (state.tileX !== unit.tileX || state.tileY !== unit.tileY) {
@@ -812,6 +1008,7 @@ export class Replica {
     unit.x = state.x
     unit.z = state.z
     unit.facing = state.facing
+    if (type.weapon.turretRate <= 0) unit.turretYaw = state.facing
     unit.speed = state.speed
     unit.tileX = state.tileX
     unit.tileY = state.tileY
@@ -831,7 +1028,8 @@ export class Replica {
     y: number,
   ): boolean {
     if (locomotion === Locomotion.Plane || locomotion === Locomotion.Rotor) return false
-    const holder = occupied.get(`${x},${y}`)
+    const tile = `${x},${y}`
+    const holder = occupied.get(tile)
     if (holder !== undefined && holder !== self) return true
     const world = this.world
     if (!world) return false
@@ -840,7 +1038,7 @@ export class Replica {
     if (world.known[index] === 0) return false
     const terrain = world.terrain[index]
     if (locomotion === Locomotion.Hull) return terrain !== Terrain.Water && terrain !== Terrain.Lake
-    return !isWalkableTerrain(terrain)
+    return !isWalkableTerrain(terrain) || this.buildingBlocks().has(tile)
   }
 
   private installMap(map: MapData, replace: boolean) {
@@ -954,12 +1152,60 @@ function still(): Pose {
   return { x: 0, z: 0, facing: 0, turretYaw: 0, altitude: 0 }
 }
 
+function offsetOf(from: Pose, to: Pose): Pose {
+  return {
+    x: to.x - from.x,
+    z: to.z - from.z,
+    facing: wrapAngle(to.facing - from.facing),
+    turretYaw: wrapAngle(to.turretYaw - from.turretYaw),
+    altitude: to.altitude - from.altitude,
+  }
+}
+
+function shiftPose(pose: Pose, offset: Pose, factor: number) {
+  pose.x += offset.x * factor
+  pose.z += offset.z * factor
+  pose.facing = wrapAngle(pose.facing + offset.facing * factor)
+  pose.turretYaw = wrapAngle(pose.turretYaw + offset.turretYaw * factor)
+  pose.altitude += offset.altitude * factor
+}
+
 function scalePose(pose: Pose, factor: number) {
   pose.x *= factor
   pose.z *= factor
   pose.facing *= factor
   pose.turretYaw *= factor
   pose.altitude *= factor
+}
+
+function changesUnits(event: ServerFrame['events'][number]): boolean {
+  const kind = event.kind
+  return (
+    kind === ServerEventKind.UnitMotion ||
+    kind === ServerEventKind.UnitHealth ||
+    kind === ServerEventKind.UnitProgress ||
+    kind === ServerEventKind.UnitHidden
+  )
+}
+
+/** A rocket unit out of rounds, which the server calls home to rearm and never holds in range. */
+function rearming(type: UnitType, unit: UnitSnapshot): boolean {
+  return type.weapon.kind === WeaponKind.Rocket && (unit.rounds ?? type.weapon.magazine) <= 0
+}
+
+function grounded(unit: UnitSnapshot): boolean {
+  return unit.health > 0 && domainOf(UNIT_TYPES[unit.typeId]) !== MoveDomain.Air
+}
+
+function sameValues(a: ArrayLike<number>, b: ArrayLike<number>): boolean {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false
+  return true
+}
+
+/** A unit's own copy of its path, the one field stepping changes in place. */
+function keptUnit(unit: UnitSnapshot): UnitSnapshot {
+  return { ...unit, path: unit.path.slice() }
 }
 
 function copyUnit(unit: UnitSnapshot): UnitSnapshot {

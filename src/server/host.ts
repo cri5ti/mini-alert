@@ -18,7 +18,7 @@ import {
 } from '../shared/protocol.ts'
 import { CITY_SIGHT, type CityLayout } from '../shared/cities.ts'
 import { type TileCoord } from '../shared/tiles.ts'
-import { spanOf, UNIT_TYPES } from '../shared/unit-types.ts'
+import { spanOf, UNIT_TYPES, WeaponKind } from '../shared/unit-types.ts'
 import { EXPLORE_MARGIN, type CitySight, type SightSource } from '../shared/vision.ts'
 import type { AiPlayer } from '../ai/player.ts'
 import { Replica } from '../client/replica.ts'
@@ -369,17 +369,16 @@ export class ServerHost {
         memory.seen.add(unit.id)
         memory.route.set(unit.id, this.routeOf(unit))
         memory.motionTick.set(unit.id, this.tickNo)
+        memory.rounds.set(unit.id, unit.rounds ?? 0)
       }
       const answered = ordered.has(unit.id) && unit.ownerId === session.playerId
-      const carried = unit.rounds ?? 0
-      const roundsChanged = memory.rounds.get(unit.id) !== carried
-      if (freshUnit || answered || (mobile && routeChanged) || roundsChanged || (held && drifted(held.get(unit.id), unit))) {
+      const newRounds = roundsNews(unit, memory.rounds.get(unit.id), unit.ownerId === session.playerId)
+      if (freshUnit || answered || (mobile && routeChanged) || newRounds || (held && drifted(held.get(unit.id), unit))) {
         events.push({ kind: ServerEventKind.UnitMotion, unit })
         commitMotion()
       } else if (due && (held ? unit.path.length > 0 || unit.speed !== 0 : mobile)) {
         ledger.push({ event: { kind: ServerEventKind.UnitMotion, unit }, commit: commitMotion })
       }
-      if (freshUnit || roundsChanged) memory.rounds.set(unit.id, carried)
       if (memory.health.get(unit.id) !== unit.health) {
         if (!freshUnit) events.push({ kind: ServerEventKind.UnitHealth, id: unit.id, health: unit.health })
         memory.health.set(unit.id, unit.health)
@@ -997,6 +996,14 @@ function orderedUnits(message: ClientMessage): ReadonlySet<number> {
 
 function trainingKinds(training: readonly TrainJob[]): string {
   return training.map((job) => `${job.yardId}:${job.typeId}`).join(',')
+}
+
+/** Whether a session's client needs the unit's new rounds: its owner's ammo bar shows each change, and every client holds a rocket unit in range only while it has rounds. */
+function roundsNews(unit: UnitSnapshot, told: number | undefined, owner: boolean): boolean {
+  const rounds = unit.rounds ?? 0
+  if (told === rounds) return false
+  if (owner) return true
+  return UNIT_TYPES[unit.typeId].weapon.kind === WeaponKind.Rocket && (told ?? 0) > 0 !== rounds > 0
 }
 
 function drifted(held: UnitSnapshot | undefined, unit: UnitSnapshot): boolean {

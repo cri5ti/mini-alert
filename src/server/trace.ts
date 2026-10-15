@@ -1,4 +1,4 @@
-import { TraceSlot } from '../shared/trace.ts'
+import { TRACE_LABEL, TraceSlot } from '../shared/trace.ts'
 
 const flag = process.env.TRACE
 export const __TRACE__ = flag === '1' || flag === 'true'
@@ -10,6 +10,9 @@ const tickMs = new Float64Array(SLOT_COUNT)
 const sumMs = new Float64Array(SLOT_COUNT)
 const stack: { slot: number; t: number }[] = []
 let ticks = 0
+const periodMs = new Float64Array(SLOT_COUNT)
+let periodReports = 0
+let periodBudget = 0
 let now = () => performance.now()
 
 export function traceClock(fn: (() => number) | null) {
@@ -60,4 +63,27 @@ export function traceCommit(elapsed: number, budget: number, window = WINDOW): T
   sumMs.fill(0)
   ticks = 0
   return { samples, budget }
+}
+
+export function traceTally(report: TraceReport) {
+  for (const sample of report.samples) periodMs[sample.slot] += sample.ms
+  periodBudget += report.budget
+  periodReports += 1
+}
+
+export function traceDrain(): string | null {
+  if (periodReports === 0) return null
+  const rows: { slot: number; ms: number }[] = []
+  for (let slot = 0; slot < TraceSlot.Idle; slot++) {
+    const ms = Math.round((periodMs[slot] / periodReports) * 100) / 100
+    if (ms > 0) rows.push({ slot, ms })
+  }
+  rows.sort((a, b) => b.ms - a.ms)
+  const idle = (periodMs[TraceSlot.Idle] / periodBudget) * 100
+  periodMs.fill(0)
+  periodReports = 0
+  periodBudget = 0
+  const parts = rows.map((row) => `${TRACE_LABEL[row.slot]} ${row.ms.toFixed(2)} ms`)
+  parts.push(`idle ${idle.toFixed(1)}%`)
+  return `trace ${parts.join(', ')}`
 }

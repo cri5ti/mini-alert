@@ -6,6 +6,8 @@ services:
     restart: unless-stopped
     ports:
       - "8787:8787"
+    environment:
+      TRACE: "1"
     volumes:
       - saves:/data
 

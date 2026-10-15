@@ -1,10 +1,9 @@
-import { BAY_COUNT, Flight, joinPaths, onBay, onRunway, openBay, planeInFlight, rollout, runwayEnd, runwayStart } from '../../shared/flight.ts'
+import { BAY_COUNT, Flight, joinPaths, onBay, onRunway, openBay, rollout, runwayEnd, runwayStart } from '../../shared/flight.ts'
 import { footprintCovers } from '../../shared/footprint.ts'
-import { driveMotion, flightLine, MotionResult, stepMotion, type MotionState } from '../../shared/motion.ts'
+import { driveMotion, flightLine, holdInRange, MotionResult, stepMotion, type MotionState } from '../../shared/motion.ts'
 import { tileCenter, type TileCoord } from '../../shared/tiles.ts'
 import { domainOf, Locomotion, MoveDomain, spanOf, UnitTypeId, WeaponKind, type UnitType } from '../../shared/unit-types.ts'
 import type { PathFinder } from '../path/pathfinder.ts'
-import { clamp, wrapAngle } from '../sim/drive.ts'
 import { redirect } from '../sim/steering.ts'
 
 export abstract class Unit {
@@ -199,10 +198,6 @@ export abstract class Unit {
     this.rounds = weapon.magazine
   }
 
-  private airborne(): boolean {
-    return this.type.locomotion !== Locomotion.Plane || planeInFlight(this.flight, this.altitude)
-  }
-
   private onHomePad(): boolean {
     if (!this.home || this.bay < 0) return false
     return onBay(this.tile.x, this.tile.y, this.home.x, this.home.y, this.bay)
@@ -216,13 +211,8 @@ export abstract class Unit {
       this.attackId = null
       return false
     }
-    const dist = Math.hypot(target.pos.x - this.pos.x, target.pos.z - this.pos.z)
+    if (this.holds(target.pos, dt)) return true
     const range = this.type.weapon.range
-    if (dist <= range && this.airborne()) {
-      this.commitPath([])
-      if (this.type.weapon.turretRate === 0) this.face(target, dt)
-      return true
-    }
     const goal = this.path[this.path.length - 1]
     const goalCenter = goal ? tileCenter(goal) : null
     const goalHolds =
@@ -238,13 +228,8 @@ export abstract class Unit {
   private pursuePoint(dt: number, paths: PathFinder): boolean {
     const point = this.attackPoint
     if (!point) return false
-    const dist = Math.hypot(point.x - this.pos.x, point.z - this.pos.z)
+    if (this.holds(point, dt)) return true
     const range = this.type.weapon.range
-    if ((dist <= range || this.type.topSpeed <= 0) && this.airborne()) {
-      this.commitPath([])
-      if (this.type.weapon.turretRate === 0) this.facePoint(point, dt)
-      return true
-    }
     const goal = this.path[this.path.length - 1]
     const goalCenter = goal ? tileCenter(goal) : null
     const goalHolds = goalCenter !== null && Math.hypot(goalCenter.x - point.x, goalCenter.z - point.z) <= range
@@ -256,18 +241,13 @@ export abstract class Unit {
     return false
   }
 
-  private facePoint(point: { x: number; z: number }, dt: number) {
-    const desired = Math.atan2(point.x - this.pos.x, point.z - this.pos.z)
-    const err = wrapAngle(desired - this.facing)
-    this.facing = wrapAngle(this.facing + clamp(err, -2.5 * dt, 2.5 * dt))
+  private holds(aim: { x: number; z: number }, dt: number): boolean {
+    const state = motionOf(this)
+    if (!holdInRange(state, this.type, aim, dt)) return false
+    this.commitPath(state.path)
+    this.facing = state.facing
+    return true
   }
-
-  private face(target: Unit, dt: number) {
-    const desired = Math.atan2(target.pos.x - this.pos.x, target.pos.z - this.pos.z)
-    const err = wrapAngle(desired - this.facing)
-    this.facing = wrapAngle(this.facing + clamp(err, -2.5 * dt, 2.5 * dt))
-  }
-
 }
 
 function motionOf(unit: Unit, loiter = true): MotionState {

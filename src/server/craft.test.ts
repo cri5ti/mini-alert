@@ -145,6 +145,7 @@ describe('craft', () => {
     const airport = game.units.find((unit) => unit.typeId === UnitTypeId.Airport)
     expect(airport).toBeDefined()
     if (!airport) return
+    human.credits = JET.cost * 6
     for (let i = 0; i < 6; i++) expect(train(game, human.id, UnitTypeId.Jet)).toBe(true)
     expect(train(game, human.id, UnitTypeId.Jet)).toBe(false)
     game.tick(40)

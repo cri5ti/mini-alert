@@ -2,6 +2,7 @@ import { flightTime } from '../../shared/ballistics.ts'
 import { CITY_SIGHT } from '../../shared/cities.ts'
 import { airborne, planeInFlight } from '../../shared/flight.ts'
 import { turnToward } from '../../shared/motion.ts'
+import { hostile } from '../../shared/players.ts'
 import type { ShotEvent, ShotHit } from '../../shared/protocol.ts'
 import { Locomotion, WeaponKind } from '../../shared/unit-types.ts'
 import { seesPoint, type CitySight, type SightSource } from '../../shared/vision.ts'
@@ -275,7 +276,7 @@ function pickTarget(unit: Unit, units: readonly Unit[], friends: readonly SightS
   for (let n = 0; n < quadHits.length; n++) {
     const index = quadHits[n]
     const other = units[index]
-    if (other.id === unit.id || other.ownerId === unit.ownerId || other.health <= 0) continue
+    if (other.id === unit.id || !hostile(unit.ownerId, other.ownerId) || other.health <= 0) continue
     const dist = distance(unit, other)
     if (dist > reach || !seesPoint(friends, other.pos.x, other.pos.z)) continue
     if (dist < closestDist || (dist === closestDist && index < closestIndex)) {
@@ -310,7 +311,7 @@ function pickStructure(unit: Unit, structures: readonly StructureTarget[], frien
   for (let n = 0; n < quadHits.length; n++) {
     const index = quadHits[n]
     const building = structures[index]
-    if (building.ownerId === 0 || building.ownerId === unit.ownerId) continue
+    if (!hostile(unit.ownerId, building.ownerId)) continue
     const dist = Math.hypot(building.x - unit.pos.x, building.z - unit.pos.z)
     if (dist > reach || !seesPoint(friends, building.x, building.z)) continue
     if (dist < closestDist || (dist === closestDist && index < closestIndex)) {

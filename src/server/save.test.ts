@@ -1,17 +1,19 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   Landform,
   LobbyClientKind,
   LobbyServerKind,
   MapSize,
+  RequestStatus,
   RoomStatus,
   type Faction,
   type GameLobbyState,
   type LobbyServerMessage,
   type WaitingRoom,
 } from '../shared/lobby.ts'
+import { mulberry32 } from '../shared/noise.ts'
 import { ServerEventKind, type ServerFrame } from '../shared/protocol.ts'
 import { Terrain } from '../shared/tiles.ts'
 import { Game } from './game.ts'
@@ -25,6 +27,7 @@ import './state.ts'
 const dirs: string[] = []
 
 afterEach(() => {
+  vi.restoreAllMocks()
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true })
 })
 
@@ -79,7 +82,7 @@ describe('saved games', () => {
   it('restores every game and seats the same client again', async () => {
     const dir = scratch()
     const token = 'abc123abc123abc123abc123abc123ab'
-    const lobby = new Lobby()
+    const lobby = new Lobby(mulberry32(1))
     const sock = fake()
     const host = lobby.connect(sock, token)
     lobby.onLobby(host, { kind: LobbyClientKind.SetName, name: 'Ada' })
@@ -188,6 +191,86 @@ describe('saved games', () => {
     expect(latest<WaitingRoom>(sock, LobbyServerKind.Waiting).games).toEqual([])
     saveSaves(lobby, dir)
     expect(existsSync(join(dir, 'game-4.json'))).toBe(true)
+  })
+
+  it('restores the request board with every seat’s votes, and numbers the next request after it', () => {
+    const dir = scratch()
+    const adaToken = 'ada0ada0ada0ada0ada0ada0ada0ada0'
+    const boToken = 'b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0'
+    const lobby = new Lobby()
+    const adaSock = fake()
+    const boSock = fake()
+    const ada = lobby.connect(adaSock, adaToken)
+    const bo = lobby.connect(boSock, boToken)
+    lobby.onLobby(ada, { kind: LobbyClientKind.SetName, name: 'Ada' })
+    lobby.onLobby(bo, { kind: LobbyClientKind.SetName, name: 'Bo' })
+    lobby.onLobby(ada, { kind: LobbyClientKind.PostRequest, text: 'Naval units' })
+    lobby.onLobby(ada, { kind: LobbyClientKind.PostRequest, text: 'Replay viewer' })
+    lobby.onLobby(bo, { kind: LobbyClientKind.PostRequest, text: 'Fog of war' })
+    const [naval, replay] = latest<WaitingRoom>(adaSock, LobbyServerKind.Waiting).requests
+    lobby.onLobby(bo, { kind: LobbyClientKind.ToggleVote, requestId: replay.id })
+    lobby.onLobby(ada, { kind: LobbyClientKind.ClaimAdmin })
+    lobby.onLobby(ada, { kind: LobbyClientKind.MarkRequestDone, requestId: naval.id })
+    const adaCards = latest<WaitingRoom>(adaSock, LobbyServerKind.Waiting).requests
+    const boCards = latest<WaitingRoom>(boSock, LobbyServerKind.Waiting).requests
+    expect(adaCards.map((card) => [card.text, card.votes, card.voted, card.mine, card.status])).toEqual([
+      ['Replay viewer', 2, true, true, RequestStatus.Open],
+      ['Fog of war', 1, false, false, RequestStatus.Open],
+      ['Naval units', 1, true, true, RequestStatus.Done],
+    ])
+    saveSaves(lobby, dir)
+
+    const restored = new Lobby()
+    loadSaves(restored, dir)
+    const adaBack = fake()
+    const boBack = fake()
+    const adaAgain = restored.connect(adaBack, adaToken)
+    restored.connect(boBack, boToken)
+    expect(latest<WaitingRoom>(adaBack, LobbyServerKind.Waiting).requests).toEqual(adaCards)
+    expect(latest<WaitingRoom>(boBack, LobbyServerKind.Waiting).requests).toEqual(boCards)
+
+    restored.onLobby(adaAgain, { kind: LobbyClientKind.PostRequest, text: 'Bigger maps' })
+    const next = latest<WaitingRoom>(adaBack, LobbyServerKind.Waiting).requests.find((card) => card.text === 'Bigger maps')
+    expect(next?.id).toBeGreaterThan(Math.max(...adaCards.map((card) => card.id)))
+  })
+
+  it('leaves the board empty and every seat intact when requests.json does not read', () => {
+    const dir = scratch()
+    const adaToken = 'ada0ada0ada0ada0ada0ada0ada0ada0'
+    const boToken = 'b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0'
+    writeFileSync(join(dir, 'hall.json'), JSON.stringify({
+      nextId: 3,
+      nextGame: 1,
+      hallChat: [],
+      members: [
+        { id: 1, token: adaToken, name: 'Ada', gameId: null, admin: true },
+        { id: 2, token: boToken, name: 'Bo', gameId: null, admin: false },
+      ],
+    }))
+    writeFileSync(join(dir, 'requests.json'), JSON.stringify({
+      nextId: 2,
+      open: [{ id: 1, text: 'Naval units', authorId: 1, author: 'Ada', voters: 7 }],
+      done: [],
+    }))
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const lobby = new Lobby()
+    loadSaves(lobby, dir)
+    expect(errors).toHaveBeenCalledWith('skip requests save', expect.any(Error))
+
+    const adaSock = fake()
+    const boSock = fake()
+    const ada = lobby.connect(adaSock, adaToken)
+    const bo = lobby.connect(boSock, boToken)
+    expect(latest<WaitingRoom>(adaSock, LobbyServerKind.Waiting).you).toEqual({ id: 1, name: 'Ada' })
+    expect(latest<WaitingRoom>(boSock, LobbyServerKind.Waiting).you).toEqual({ id: 2, name: 'Bo' })
+    expect(latest<WaitingRoom>(boSock, LobbyServerKind.Waiting).requests).toEqual([])
+
+    lobby.onLobby(bo, { kind: LobbyClientKind.PostRequest, text: 'Naval units' })
+    const requestId = latest<WaitingRoom>(boSock, LobbyServerKind.Waiting).requests[0].id
+    lobby.onLobby(bo, { kind: LobbyClientKind.MarkRequestDone, requestId })
+    expect(latest<WaitingRoom>(boSock, LobbyServerKind.Waiting).requests[0].status).toBe(RequestStatus.Open)
+    lobby.onLobby(ada, { kind: LobbyClientKind.MarkRequestDone, requestId })
+    expect(latest<WaitingRoom>(boSock, LobbyServerKind.Waiting).requests[0].status).toBe(RequestStatus.Done)
   })
 })
 

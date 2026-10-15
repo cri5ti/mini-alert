@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>HUD mock</title>
+    <style>
+      #view {
+        background: #1f4d63;
+      }
+
+      .mock-phones {
+        position: fixed;
+        inset: 0;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 32px;
+        padding: 24px;
+        font: 13px/1.4 ui-monospace, monospace;
+        color: #8f9a84;
+      }
+
+      .mock-phones figure {
+        margin: 0;
+        display: grid;
+        grid-template-columns: repeat(2, max-content);
+        align-items: start;
+        gap: 8px 24px;
+      }
+
+      .mock-phones figcaption {
+        grid-column: 1 / -1;
+      }
+
+      .mock-phones iframe {
+        border: 1px solid #3b4636;
+        border-radius: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="view"></canvas>
+    <div id="hud"></div>
+    <script type="module" src="/src/client/hud-mock.ts"></script>
+  </body>
+</html>

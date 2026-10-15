@@ -13,6 +13,7 @@ describe('network bench', () => {
     const first = await runCase(spec)
     const second = await runCase(spec)
     expect(first.clients[0].framesPerSec).toBeGreaterThan(0)
+    expect(first.commands.length).toBeGreaterThan(0)
     expect(untimed(second)).toEqual(untimed(first))
   }, 60_000)
 })

@@ -87,15 +87,31 @@ export class Commander {
   }
 
   recallGroup(slot: number, add: boolean): UnitSnapshot[] {
+    const units = this.members(slot)
+    this.groups[slot] = units.map((unit) => unit.id)
+    if (units.length === 0) return units
+    if (add) this.addIds(this.groups[slot])
+    else this.selectIds(this.groups[slot])
+    return units
+  }
+
+  groupOf(): number | null {
+    const live = new Set(this.selected().filter((unit) => unit.health > 0).map((unit) => unit.id))
+    if (live.size === 0) return null
+    for (let slot = 0; slot < GROUP_SLOTS; slot++) {
+      if (this.groups[slot].length < live.size) continue
+      const members = this.members(slot)
+      if (members.length === live.size && members.every((unit) => live.has(unit.id))) return slot
+    }
+    return null
+  }
+
+  private members(slot: number): UnitSnapshot[] {
     const units: UnitSnapshot[] = []
     for (const id of this.groups[slot]) {
       const unit = this.replica.unit(id)
       if (unit && unit.ownerId === this.replica.playerId && unit.health > 0) units.push(unit)
     }
-    this.groups[slot] = units.map((unit) => unit.id)
-    if (units.length === 0) return units
-    if (add) this.addIds(this.groups[slot])
-    else this.selectIds(this.groups[slot])
     return units
   }
 

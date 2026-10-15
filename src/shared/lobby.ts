@@ -64,8 +64,12 @@ export const enum LobbyClientKind {
   SetAiPace = 13,
   ClaimAdmin = 14,
   DestroyGame = 15,
-  SetLandform = 16,
-  SetLakes = 17,
+  PostRequest = 16,
+  ToggleVote = 17,
+  MarkRequestDone = 18,
+  DeleteRequest = 19,
+  SetLandform = 20,
+  SetLakes = 21,
 }
 
 export const enum LobbyServerKind {
@@ -84,6 +88,16 @@ export const enum SlotKind {
 export const enum RoomStatus {
   Waiting = 1,
   Playing = 2,
+}
+
+export const enum RequestStatus {
+  Open = 1,
+  Done = 2,
+}
+
+export const enum PostBlock {
+  SeatLimit = 1,
+  BoardFull = 2,
 }
 
 export type Person = {
@@ -111,6 +125,17 @@ export type GameCard = {
   lakes: number
   slots: SlotView[]
   waiting: string[]
+}
+
+/** A request as one seat sees it: voted and mine are that seat's. */
+export type RequestCard = {
+  id: number
+  text: string
+  author: string
+  votes: number
+  voted: boolean
+  mine: boolean
+  status: RequestStatus
 }
 
 export type Faction = {
@@ -191,6 +216,26 @@ export type DestroyGame = {
   gameId: number
 }
 
+export type PostRequest = {
+  kind: LobbyClientKind.PostRequest
+  text: string
+}
+
+export type ToggleVote = {
+  kind: LobbyClientKind.ToggleVote
+  requestId: number
+}
+
+export type MarkRequestDone = {
+  kind: LobbyClientKind.MarkRequestDone
+  requestId: number
+}
+
+export type DeleteRequest = {
+  kind: LobbyClientKind.DeleteRequest
+  requestId: number
+}
+
 export type SetLandform = {
   kind: LobbyClientKind.SetLandform
   landform: Landform
@@ -211,6 +256,24 @@ export function clampAiPace(value: number): number {
   return Math.min(AI_PACE_MAX, Math.max(AI_PACE_MIN, stepped))
 }
 
+export const REQUEST_TEXT_LIMIT = 80
+export const REQUEST_SEAT_LIMIT = 3
+export const REQUEST_OPEN_LIMIT = 40
+export const REQUEST_DONE_KEPT = 10
+
+export function cleanRequestText(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const text = value.replace(/\s+/g, ' ').trim().slice(0, REQUEST_TEXT_LIMIT).trimEnd()
+  return text.length > 0 ? text : null
+}
+
+/** Why a seat holding `mine` of the board's `open` requests may not post; null when it may. */
+export function postBlock(open: number, mine: number): PostBlock | null {
+  if (open >= REQUEST_OPEN_LIMIT) return PostBlock.BoardFull
+  if (mine >= REQUEST_SEAT_LIMIT) return PostBlock.SeatLimit
+  return null
+}
+
 export type LobbyClientMessage =
   | SetName
   | CreateGame
@@ -227,6 +290,10 @@ export type LobbyClientMessage =
   | SetAiPace
   | ClaimAdmin
   | DestroyGame
+  | PostRequest
+  | ToggleVote
+  | MarkRequestDone
+  | DeleteRequest
   | SetLandform
   | SetLakes
 
@@ -236,6 +303,7 @@ export type WaitingRoom = {
   people: Person[]
   games: GameCard[]
   chat: ChatLine[]
+  requests: RequestCard[]
 }
 
 export type GameLobbyState = {

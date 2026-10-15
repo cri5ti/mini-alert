@@ -1,0 +1,21 @@
+:root {
+  --con-void: #0b0d0a;
+  --con-steel: #161b14;
+  --con-plate: #1f261c;
+  --con-edge: #3b4636;
+  --con-rivet: #5d6b55;
+  --con-ink: #e4e6d4;
+  --con-dim: #8f9a84;
+  --con-radar: #3cde73;
+  --con-amber: #f0a830;
+  --con-alert: #e0503a;
+  --con-glow: rgba(60, 222, 115, 0.45);
+  --con-haze: rgba(60, 222, 115, 0.12);
+  --con-ring: rgba(60, 222, 115, 0.22);
+  --con-scan: rgba(0, 0, 0, 0.18);
+  --con-vignette: rgba(0, 0, 0, 0.5);
+  --con-veil: rgba(8, 10, 6, 0.78);
+  --con-sans: ui-sans-serif, system-ui, sans-serif;
+  --con-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --con-stencil: 'Saira Stencil One', ui-sans-serif, system-ui, sans-serif;
+}

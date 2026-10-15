@@ -49,7 +49,7 @@ export function bindInput(
 
   const syncEdge = (event: PointerEvent) => {
     const target = event.target
-    const blocked = target instanceof Element && target.closest('button, a, input, textarea, #minimap, #sheet, #outcome, .dropdown, .flyout') !== null
+    const blocked = target instanceof Element && target.closest('button, a, input, textarea, #minimap, #sheet, #outcome, .dropdown') !== null
     if (event.pointerType === 'touch' || pinch || pan.active || document.body.classList.contains('lobby') || blocked) {
       view.setEdgePan(0, 0)
       return
@@ -211,7 +211,8 @@ export function bindInput(
     view.unitsInRect(originX, originY, x, y, replica.units, replica.playerId)
 
   const selectKind = (typeId: UnitTypeId, add: boolean) => {
-    const onScreen = view.unitsInRect(0, 0, window.innerWidth, window.innerHeight, replica.units, replica.playerId)
+    const field = canvas.getBoundingClientRect()
+    const onScreen = view.unitsInRect(field.left, field.top, field.right, field.bottom, replica.units, replica.playerId)
     const same = onScreen.filter((id) => replica.unit(id)?.typeId === typeId)
     if (add) player.addIds(same)
     else player.selectIds(same)

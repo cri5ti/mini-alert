@@ -152,7 +152,14 @@ export type Row = {
   server: ServerRow
   triggers: Triggers | null
   hash: string
+  /** Every unit's id, pose and health after each server tick. */
+  gameHash: string
+  commandHash: string
+  commands: Command[]
 }
+
+/** A command the host hands to the Game from a remote client or an AI seat; `lag` is what a move order passes to `Game.orderMove`. */
+export type Command = { tag: number; tick: number; message: ClientMessage; lag?: number }
 
 type Pose = { x: number; z: number }
 
@@ -200,6 +207,7 @@ class Samples {
 }
 
 type Remote = {
+  tag: number
   player: Player
   enemyTown: TileCoord
   replica: Replica
@@ -271,6 +279,9 @@ function simulate(spec: CaseSpec, clock: { now: number }, realNow: () => number)
   const host = new ServerHost(game)
   const tally: Tally = { host: 0, game: 0, ai: 0, worst: 0, ticks: 0, tee: 0 }
   const hash = createHash('sha256')
+  const gameHash = createHash('sha256')
+  const commands: Command[] = []
+  let moveLag: number | undefined
   let measuring = false
 
   const outposts = stage(spec.scenario, game, players, towns, island.towns)
@@ -283,6 +294,11 @@ function simulate(spec: CaseSpec, clock: { now: number }, realNow: () => number)
     if (measuring) tally.game += realNow() - started
     return shots
   }
+  const orderMove = game.orderMove.bind(game)
+  game.orderMove = (playerId, unitIds, tile, lag) => {
+    moveLag = lag
+    return orderMove(playerId, unitIds, tile, lag)
+  }
 
   let session = 0
   const remotes: Remote[] = []
@@ -290,7 +306,7 @@ function simulate(spec: CaseSpec, clock: { now: number }, realNow: () => number)
     const player = players[index]
     const tag = session++
     if (seats[index]) {
-      const bot = new AiPlayer(teePort(host.join(player), (frame) => tee(tag, frame, null)))
+      const bot = new AiPlayer(teePort(host.join(player), (frame) => tee(tag, frame, null), (message, pass) => relay(tag, message, pass)))
       const update = bot.update.bind(bot)
       bot.update = (dt) => {
         const started = realNow()
@@ -341,6 +357,7 @@ function simulate(spec: CaseSpec, clock: { now: number }, realNow: () => number)
       }
       history.set(host.tickNo, poses(game))
       history.delete(host.tickNo - HISTORY_TICKS)
+      hashGame(gameHash, host.tickNo, game)
       watch?.observe()
     }
     for (const remote of remotes) remote.down.deliver(now, (bytes) => receive(remote, bytes, now))
@@ -375,16 +392,20 @@ function simulate(spec: CaseSpec, clock: { now: number }, realNow: () => number)
       },
       triggers: watch ? { ...watch.triggers } : null,
       hash: hash.digest('hex'),
+      gameHash: gameHash.digest('hex'),
+      commandHash: createHash('sha256').update(JSON.stringify(commands)).digest('hex'),
+      commands,
     }),
   }
 
   function attachRemote(tag: number, player: Player, enemyTown: TileCoord, index: number): Remote {
-    const replica = new Replica()
+    const replica = new Replica({ rollback: true })
     const port: ClientPort = {
       send: (message) => send(remote, message),
       onServer() {},
     }
     const remote: Remote = {
+      tag,
       player,
       enemyTown,
       replica,
@@ -445,6 +466,16 @@ function simulate(spec: CaseSpec, clock: { now: number }, realNow: () => number)
     tally.tee += realNow() - started
   }
 
+  /** Passes a client's message to the host and records it when the host hands it to the Game. */
+  function relay<T>(tag: number, message: ClientMessage, pass: () => T): T {
+    moveLag = undefined
+    const result = pass()
+    if (message.kind !== ClientMessageKind.Ping && message.kind !== ClientMessageKind.RequestSnapshot) {
+      commands.push(moveLag === undefined ? { tag, tick: host.tickNo, message } : { tag, tick: host.tickNo, message, lag: moveLag })
+    }
+    return result
+  }
+
   function send(remote: Remote, message: ClientMessage): number {
     remote.seq += 1
     remote.up.send(clock.now, encodeClientMessage(message, remote.seq, remote.replica.localTick))
@@ -460,7 +491,7 @@ function simulate(spec: CaseSpec, clock: { now: number }, realNow: () => number)
     if (placing) remote.player.credits = Math.max(remote.player.credits, CHURN_CREDITS)
     const layouts = watch && placing ? game.cityLayouts() : null
     const units = game.units.length
-    remote.play.command(decoded.message, decoded.seq, decoded.tick)
+    relay(remote.tag, decoded.message, () => remote.play.command(decoded.message, decoded.seq, decoded.tick))
     if (!watch || !layouts) return
     if (kind === ClientMessageKind.PlaceCity && game.cityLayouts().some((layout, index) => layout !== layouts[index])) {
       watch.triggers.placeCity += 1
@@ -528,7 +559,7 @@ function simulate(spec: CaseSpec, clock: { now: number }, realNow: () => number)
     } else if (spec.scenario === Scenario.Assault) {
       remote.actAt += ASSAULT_EVERY_MS
       commander.selectIds(replica.units.map((unit) => unit.id))
-      const enemies = replica.units.filter((unit) => unit.ownerId !== replica.playerId && unit.health > 0)
+      const enemies = replica.units.filter((unit) => unit.ownerId !== replica.playerId && unit.health > 0).sort(byId)
       if (enemies.length > 0) commander.orderAttack(enemies[Math.floor(actions() * enemies.length)].id)
       else commander.orderMove(remote.enemyTown)
     } else if (spec.scenario === Scenario.Economy) {
@@ -554,7 +585,7 @@ function simulate(spec: CaseSpec, clock: { now: number }, realNow: () => number)
     const replica = remote.replica
     const commander = remote.commander
     const index = players.indexOf(remote.player)
-    const own = replica.units.filter((unit) => unit.ownerId === replica.playerId && unit.health > 0)
+    const own = replica.units.filter((unit) => unit.ownerId === replica.playerId && unit.health > 0).sort(byId)
     const tanks = own.filter((unit) => unit.typeId === UnitTypeId.MedTank)
     const third = Math.ceil(tanks.length / 3)
     const states = game.cityStates()
@@ -578,9 +609,9 @@ function simulate(spec: CaseSpec, clock: { now: number }, realNow: () => number)
       own.filter((unit) => unit.typeId === UnitTypeId.Scout).forEach((scout, at) => order([scout], far[at % far.length]))
     }
     remote.acts += 1
-    const structure = replica.units.find(
-      (unit) => unit.ownerId !== replica.playerId && unit.health > 0 && UNIT_TYPES[unit.typeId].topSpeed <= 0,
-    )
+    const structure = replica.units
+      .filter((unit) => unit.ownerId !== replica.playerId && unit.health > 0 && UNIT_TYPES[unit.typeId].topSpeed <= 0)
+      .sort(byId)[0]
     const strike = tanks.slice(third * 2)
     if (structure && remote.strikeTarget !== structure.id && strike.length > 0) {
       remote.strikeTarget = structure.id
@@ -773,9 +804,13 @@ function deploy(game: Game, players: readonly Player[], towns: readonly MapPoint
   }
 }
 
-function teePort(port: ClientPort, seen: (frame: ServerFrame) => void): ClientPort {
+function teePort(
+  port: ClientPort,
+  seen: (frame: ServerFrame) => void,
+  relay: (message: ClientMessage, pass: () => number | null) => number | null,
+): ClientPort {
   return {
-    send: (message) => port.send(message),
+    send: (message) => relay(message, () => port.send(message)),
     onServer: (handler) =>
       port.onServer((frame) => {
         seen(frame)
@@ -804,6 +839,25 @@ function sortedPatches(frame: ServerFrame): ServerFrame {
         : event,
     ),
   }
+}
+
+function hashGame(hash: Hash, tick: number, game: Game) {
+  const view = new DataView(new ArrayBuffer(8 + game.units.length * 40))
+  view.setUint32(0, tick)
+  view.setUint32(4, game.units.length)
+  game.units.forEach((unit, index) => {
+    const at = 8 + index * 40
+    view.setFloat64(at, unit.id)
+    view.setFloat64(at + 8, unit.pos.x)
+    view.setFloat64(at + 16, unit.pos.z)
+    view.setFloat64(at + 24, unit.facing)
+    view.setFloat64(at + 32, unit.health)
+  })
+  hash.update(new Uint8Array(view.buffer))
+}
+
+function byId(a: { id: number }, b: { id: number }): number {
+  return a.id - b.id
 }
 
 function poses(game: Game): Map<number, Pose> {
@@ -900,7 +954,8 @@ Options:
 
 const COLUMNS = [
   'case', 'raw B/s', 'deflated B/s', 'frames/s', 'events/s', 'corr/s', 'visible/s', 'resync', 'snap', 'drop',
-  'echo ms p50/p95/max', 'own p95/p99/max', 'enemy p95/p99/max', 'lag', 'ticks/s', 'host', 'game', 'ai', 'net', 'worst', 'hash',
+  'echo ms p50/p95/max', 'own p95/p99/max', 'enemy p95/p99/max', 'lag', 'ticks/s', 'host', 'game', 'ai', 'net', 'worst',
+  'frame hash', 'game hash', 'command hash',
 ]
 
 const entry = process.argv[1] ? pathToFileURL(process.argv[1]).href : ''
@@ -972,6 +1027,8 @@ function tableRow(row: Row, client: number): string {
     s.networkMs.toFixed(2),
     s.worstMs.toFixed(1),
     row.hash.slice(0, 12),
+    row.gameHash.slice(0, 12),
+    row.commandHash.slice(0, 12),
   ].join(' | ')} |`
 }
 

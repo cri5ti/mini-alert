@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { Flight } from '../shared/flight.ts'
 import { SIM_STEP } from '../shared/motion.ts'
 import { ServerEventKind, type MapCell, type ServerFrame, type UnitSnapshot } from '../shared/protocol.ts'
+import { planMoves } from '../shared/route.ts'
 import { Terrain } from '../shared/tiles.ts'
 import { UnitTypeId } from '../shared/unit-types.ts'
 import { Replica } from './replica.ts'
+
+vi.mock('../shared/route.ts', { spy: true })
 
 function scout(x: number, path: { x: number; y: number }[]): UnitSnapshot {
   return {
@@ -28,9 +32,16 @@ function scout(x: number, path: { x: number; y: number }[]): UnitSnapshot {
 }
 
 function joined(...units: UnitSnapshot[]): Replica {
+  return welcomed(new Replica(), units)
+}
+
+function rolling(...units: UnitSnapshot[]): Replica {
+  return welcomed(new Replica({ rollback: true }), units)
+}
+
+function welcomed(replica: Replica, units: UnitSnapshot[]): Replica {
   const cells: MapCell[] = []
   for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) cells.push({ x, y, terrain: Terrain.Land, shift: 0 })
-  const replica = new Replica()
   replica.apply({
     tick: 10,
     ack: 0,
@@ -52,6 +63,14 @@ function joined(...units: UnitSnapshot[]): Replica {
 
 const road = [{ x: 3, y: 4 }, { x: 4, y: 4 }, { x: 5, y: 4 }, { x: 6, y: 4 }, { x: 7, y: 4 }, { x: 8, y: 4 }, { x: 9, y: 4 }]
 
+function onRow(unit: UnitSnapshot, id: number, row: number): UnitSnapshot {
+  return { ...unit, id, z: row + 0.5, tileY: row, path: unit.path.map((tile) => ({ x: tile.x, y: row })), goal: unit.goal && { x: unit.goal.x, y: row } }
+}
+
+function motion(unit: UnitSnapshot): ServerFrame['events'][number] {
+  return { kind: ServerEventKind.UnitMotion, unit }
+}
+
 function convoy(): UnitSnapshot[] {
   return [3, 4, 5].map((row, index) => {
     const path = Array.from({ length: 12 }, (_, step) => ({ x: 2 + step, y: row }))
@@ -59,13 +78,13 @@ function convoy(): UnitSnapshot[] {
   })
 }
 
-/** The convoy's UnitMotion every `every` ticks up to `last`, with routes the clients cannot predict switched at ticks 90 and 150. */
+/** The convoy's UnitMotion every `every` ticks up to `last`, with routes the clients cannot predict switched at ticks 120 and 150. */
 function convoyFrames(every: number, last: number): ServerFrame[] {
   const server = joined(...convoy())
   const frames: ServerFrame[] = []
   for (let tick = 10 + every; tick <= last; tick += every) {
     server.simulateTo(tick)
-    if (tick === 90) server.predictMove([1], { x: 14, y: 1 })
+    if (tick === 120) server.predictMove([1], { x: 14, y: 1 })
     if (tick === 150) server.predictMove([2, 3], { x: 3, y: 12 })
     frames.push({ tick, ack: 0, events: server.units.map((unit) => ({ kind: ServerEventKind.UnitMotion, unit: structuredClone(unit) })) })
   }
@@ -132,6 +151,29 @@ describe('replica drawing', () => {
     expect(replica.drawn()[0].x).toBeCloseTo(3.5, 2)
   })
 
+  it('draws a moving unit corrected with its own state as an uncorrected copy draws it', () => {
+    const corrected = joined(scout(2.5, road))
+    const uncorrected = joined(scout(2.5, road))
+    const pose = (replica: Replica) => {
+      const { x, z, facing, turretYaw, altitude } = replica.drawn()[0]
+      return [x, z, facing, turretYaw, altitude ?? 0]
+    }
+    for (const replica of [corrected, uncorrected]) {
+      replica.drawn()
+      replica.advance(SIM_STEP * 1.5)
+      replica.drawn()
+    }
+    const now = performance.now()
+    const tick = corrected.localTick
+    corrected.apply({ tick, ack: 0, events: [{ kind: ServerEventKind.UnitMotion, unit: structuredClone(corrected.units[0]) }] }, now)
+    uncorrected.apply({ tick, ack: 0, events: [] }, now)
+    for (let frame = 0; frame < 12; frame++) {
+      expect(pose(corrected)).toEqual(pose(uncorrected).map((value) => expect.closeTo(value, 9)))
+      corrected.advance(SIM_STEP / 3)
+      uncorrected.advance(SIM_STEP / 3)
+    }
+  })
+
   it('steps forward to a frame far ahead instead of asking for a snapshot', () => {
     const replica = joined(scout(2.5, road))
     replica.apply({ tick: 160, ack: 0, events: [] })
@@ -146,6 +188,17 @@ describe('replica drawing', () => {
     expect(replica.units[0].path).toEqual(Array.from({ length: 10 }, (_, i) => ({ x: 3 + i, y: 4 })))
     for (let i = 0; i < 15; i++) replica.advance(SIM_STEP)
     expect(replica.units[0].x).toBeGreaterThan(2.6)
+  })
+
+  it('returns the end of the route a move order plans for each unit, keeping units on the move on course', () => {
+    const replica = joined(scout(2.5, road), onRow(scout(2.5, road), 2, 6), onRow(scout(2.5, []), 3, 8))
+    const goals = replica.predictMove([1, 2, 3], { x: 12, y: 10 })
+    const courses = replica.units.map((unit) => structuredClone(unit.path))
+    expect(courses[0]).toEqual(road)
+    expect(goals).toHaveLength(3)
+    expect(goals).toContainEqual(courses[2].at(-1))
+    expect(replica.predictMove([1, 2, 3], { x: 4, y: 12 })).toHaveLength(3)
+    expect(replica.units.map((unit) => unit.path)).toEqual(courses)
   })
 
   it('keeps a steady pace when frames arrive with uneven delays', () => {
@@ -247,6 +300,112 @@ describe('replica drawing', () => {
     expect(second.units).toEqual(first.units)
   })
 
+  it('leaves a leader stopped by a frame three ticks late, and its follower, where the frame on time leaves them', () => {
+    const units = () => [scout(4.5, road.slice(2)), { ...scout(3.5, road.slice(1)), id: 2 }]
+    const server = joined(...units())
+    server.simulateTo(18)
+    server.units[0].path = []
+    const stop: ServerFrame = { tick: 18, ack: 0, events: [motion(structuredClone(server.units[0]))] }
+    const onTime = rolling(...units())
+    onTime.simulateTo(18)
+    onTime.apply(stop)
+    onTime.simulateTo(60)
+    const late = rolling(...units())
+    late.simulateTo(21)
+    late.apply(stop)
+    late.simulateTo(60)
+    expect(late.units).toEqual(onTime.units)
+  })
+
+  it('leaves units where on-time frames leave them when an echo of a tick already applied arrives two ticks late', () => {
+    const units = () => [scout(2.5, []), onRow(scout(2.5, []), 2, 8)]
+    const tick: ServerFrame = { tick: 13, ack: 0, events: [motion(scout(2.5, road))] }
+    const echo: ServerFrame = { tick: 13, ack: 1, events: [motion(onRow(scout(2.5, road), 2, 8))] }
+    const onTime = rolling(...units())
+    onTime.simulateTo(13)
+    onTime.apply(tick)
+    onTime.apply(echo)
+    onTime.simulateTo(40)
+    const late = rolling(...units())
+    late.simulateTo(13)
+    late.apply(tick)
+    late.simulateTo(15)
+    late.apply(echo)
+    late.simulateTo(40)
+    expect(late.units).toEqual(onTime.units)
+  })
+
+  it("keeps a guess made after its tick's frames on top of late frames stamped that tick", () => {
+    const tank = (id: number, x: number, row: number) => onRow({ ...scout(x, []), typeId: UnitTypeId.MedTank }, id, row)
+    const units = () => [tank(1, 2.5, 4), tank(2, 2.5, 8)]
+    const first: ServerFrame = { tick: 13, ack: 0, events: [] }
+    const late: ServerFrame[] = [
+      { tick: 13, ack: 0, events: [motion(tank(1, 2.6, 4))] },
+      { tick: 13, ack: 1, events: [motion(tank(2, 3.5, 8))] },
+    ]
+    const onTime = rolling(...units())
+    onTime.simulateTo(13)
+    for (const frame of [first, ...late]) onTime.apply(frame)
+    onTime.predictMove([1], { x: 12, y: 4 })
+    onTime.simulateTo(15)
+    onTime.predictMove([2], { x: 12, y: 8 })
+    onTime.simulateTo(30)
+    const replica = rolling(...units())
+    replica.simulateTo(13)
+    replica.apply(first)
+    replica.predictMove([1], { x: 12, y: 4 })
+    replica.simulateTo(15)
+    replica.predictMove([2], { x: 12, y: 8 })
+    replica.simulateTo(16)
+    for (const frame of late) replica.apply(frame)
+    replica.simulateTo(30)
+    expect(onTime.units[0].x).toBeGreaterThan(2.6)
+    expect(replica.units).toEqual(onTime.units)
+  })
+
+  it('re-applies a move guess without planning it again when late frames ahead of it leave the map as it was', () => {
+    const land: ServerFrame['events'][number] = {
+      kind: ServerEventKind.MapPatch,
+      map: { width: 16, height: 16, cells: [{ x: 15, y: 15, terrain: Terrain.Land, shift: 0 }], coast: [], holes: [], roads: [], towns: [], cleared: [] },
+    }
+    const frames: ServerFrame[] = [10, 11].map((tick) => ({ tick, ack: 0, events: [land] }))
+    // Off its tile's centre line, the unit's course depends on the route's first tile.
+    const unit = () => ({ ...scout(2.5, []), z: 4.2 })
+    const onTime = rolling(unit())
+    onTime.apply(frames[0])
+    onTime.simulateTo(11)
+    onTime.apply(frames[1])
+    onTime.predictMove([1], { x: 12, y: 4 })
+    onTime.simulateTo(30)
+    const late = rolling(unit())
+    late.simulateTo(11)
+    late.predictMove([1], { x: 12, y: 4 })
+    late.simulateTo(24)
+    vi.mocked(planMoves).mockClear()
+    for (const frame of frames) late.apply(frame)
+    expect(planMoves).not.toHaveBeenCalled()
+    late.simulateTo(30)
+    expect(late.units).toEqual(onTime.units)
+  })
+
+  it('re-plans a move guess when a late frame ahead of it moves a unit onto its goal', () => {
+    const units = () => [scout(2.5, []), onRow(scout(2.5, []), 2, 8)]
+    const moved: ServerFrame = { tick: 13, ack: 0, events: [motion(onRow(scout(12.5, []), 2, 4))] }
+    const onTime = rolling(...units())
+    onTime.simulateTo(13)
+    onTime.apply(moved)
+    onTime.predictMove([1], { x: 12, y: 4 })
+    onTime.simulateTo(30)
+    const late = rolling(...units())
+    late.simulateTo(13)
+    late.predictMove([1], { x: 12, y: 4 })
+    late.simulateTo(16)
+    late.apply(moved)
+    late.simulateTo(30)
+    expect(onTime.units[0].goal).not.toEqual({ x: 12, y: 4 })
+    expect(late.units).toEqual(onTime.units)
+  })
+
   it('counts a city update apart from terrain changes', () => {
     const replica = joined(scout(2.5, []))
     const terrain = replica.terrainRevision
@@ -259,6 +418,25 @@ describe('replica drawing', () => {
     expect(replica.knownTiles).toBe(256)
   })
 
+  it('keeps a unit steered onto a city building out of the building tile, as the server does', () => {
+    const replica = joined(scout(2.5, road))
+    const layout = { x: 6, y: 4, span: 1, seed: 1, tiles: [{ x: 6, y: 4 }], buildings: [{ x: 6, y: 4, model: 0, yaw: 0, keep: false }], streets: [] }
+    const state = { ownerId: 0, color: 0, progress: 0, challengerId: 0, challengerColor: 0, grown: 0, ruins: [], sites: [] }
+    replica.apply({ tick: 10, ack: 0, events: [{ kind: ServerEventKind.CityUpdate, city: { index: 0, state, layout } }] })
+    replica.simulateTo(100)
+    expect(replica.units[0].tileX).toBe(5)
+  })
+
+  it('lets the lower id take a tile two units enter in one tick, though it came into view after the higher id, as the server does', () => {
+    const left = { ...scout(5.5, [{ x: 6, y: 4 }]), id: 2, ownerId: 2 }
+    const below = { ...scout(6.5, [{ x: 6, y: 4 }]), id: 5, ownerId: 2, z: 5.5, tileY: 5, facing: Math.PI }
+    const replica = joined(below)
+    replica.apply({ tick: 10, ack: 0, events: [motion(left)] })
+    replica.simulateTo(20)
+    expect(replica.unit(2)).toMatchObject({ tileX: 6, tileY: 4 })
+    expect(replica.unit(5)).toMatchObject({ tileX: 6, tileY: 5 })
+  })
+
   it('turns a turret toward its attack target between server updates', () => {
     const tank = { ...scout(4.5, []), id: 2, typeId: UnitTypeId.MedTank, facing: 0, turretYaw: 0 }
     const foe = { ...scout(8.5, []), id: 3, ownerId: 2 }
@@ -268,12 +446,32 @@ describe('replica drawing', () => {
     expect(replica.unit(2)?.turretYaw).toBeGreaterThan(1)
   })
 
+  it('keeps a flying jet on course without its target on an attack order in range until the server answers', () => {
+    const jet = { ...scout(4.5, road.slice(2)), typeId: UnitTypeId.Jet, speed: 8, home: { x: 0, y: 12 }, flight: Flight.Cruise, altitude: 2.6 }
+    const foe = { ...scout(8.5, []), id: 3, ownerId: 2, z: 8.5, tileY: 8 }
+    const ordered = joined(jet, foe)
+    const unordered = joined(jet, foe)
+    ordered.predictAttack([1], foe, 3)
+    ordered.simulateTo(20)
+    unordered.simulateTo(20)
+    expect(ordered.unit(1)).toEqual(unordered.unit(1))
+  })
+
   it('leads a unit out of range toward its attack target', () => {
     const tank = { ...scout(1.5, []), id: 2, typeId: UnitTypeId.MedTank }
     const replica = joined(tank, { ...scout(14.5, []), id: 3, ownerId: 2 })
     replica.predictAttack([2], { x: 14.5, z: 4.5 }, 3)
     expect(replica.unit(2)?.attackId).toBe(3)
     expect(replica.unit(2)?.path).toEqual([{ x: 2, y: 4 }, { x: 3, y: 4 }, { x: 4, y: 4 }])
+  })
+
+  it('keeps units on the move on course on an attack order out of range, turning only turrets to the target', () => {
+    const tank = { ...scout(1.5, road), id: 2, typeId: UnitTypeId.MedTank }
+    const runner = onRow(scout(1.5, road), 4, 6)
+    const replica = joined(tank, runner, { ...scout(14.5, []), id: 3, ownerId: 2 })
+    replica.predictAttack([2, 4], { x: 14.5, z: 4.5 }, 3)
+    expect(replica.unit(2)).toMatchObject({ x: 1.5, z: 4.5, facing: Math.PI / 2, path: road, attackId: 3 })
+    expect(replica.unit(4)).toMatchObject({ path: runner.path, attackId: null })
   })
 
   it('shows an expected unit in the queue until its command is acknowledged', () => {

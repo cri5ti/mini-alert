@@ -14,6 +14,7 @@
     "build": "tsc && vite build && esbuild src/server/listen.ts --bundle --platform=node --format=esm --packages=external --outfile=build/server/listen.js",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:phone": "vitest run --mode phone",
     "ai": "tsx src/ai/sim.ts",
     "proto": "buf generate",
     "bench": "tsx src/bench/net.ts"
@@ -26,12 +27,15 @@
     "@types/ws": "^8.18.2",
     "concurrently": "^10.0.6",
     "esbuild": "^0.28.2",
+    "happy-dom": "^21.0.1",
+    "playwright": "^1.64.1",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
     "vitest": "^5.0.3"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.16.0",
+    "@fontsource/saira-stencil-one": "^5.3.0",
     "three": "^0.186.1",
     "tsx": "^4.23.15",
     "ws": "^8.22.0"

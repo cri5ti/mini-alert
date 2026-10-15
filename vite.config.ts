@@ -1,8 +1,8 @@
 import { defineConfig } from 'vitest/config'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   test: {
-    include: ['src/**/*.test.ts'],
+    include: [mode === 'phone' ? 'src/**/*.phone.ts' : 'src/**/*.test.ts'],
   },
   server: {
     proxy: {
@@ -12,4 +12,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

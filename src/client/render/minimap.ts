@@ -1,12 +1,57 @@
 import type { CityState, UnitSnapshot, WorldSnapshot } from '../../shared/protocol.ts'
 import { NEUTRAL_CITY, type CityLayout } from '../../shared/cities.ts'
 import { isMinimapShore, minimapRgb } from '../../shared/minimap.ts'
+import { hostile } from '../../shared/players.ts'
 import type { Terrain, TileCoord } from '../../shared/tiles.ts'
+import { ContactKind } from './radar.ts'
 
 const DOT = 3.25
+const ENEMY_RING = DOT + 1
+const ALERT_RED = '#ff2a1a'
+const SHADE = 'rgba(0, 0, 0, 0.6)'
 const FOG_REPAINT_MS = 200
-const BLIP_MS = 1500
-const BLIP_HOLD_MS = 1100
+const BLIP_MS = 4000
+const BLIP_CLOSE_MS = 1000
+const BLIP_PULSE_MS = 700
+const BLIP_PULSES = 3
+const BLIP_FLASH_MS = 700
+const BLIP_FADE_MS = 600
+/** The contracting ring's starting radius as a share of the minimap's short side. */
+const BLIP_REACH = 0.4
+const BLIP_MARK = 5
+const BLIP_RING_CLOSED = BLIP_MARK + 3
+const BLIP_PULSE_SPREAD = 18
+const BLIP_STILL_RING = 14
+const BLIP_EDGE = 4
+export const BLIP_COLORS: Record<ContactKind, string> = {
+  [ContactKind.Base]: ALERT_RED,
+  [ContactKind.Unit]: '#ffb21e',
+}
+
+/** An attack ping, placed as a share of the minimap's width and height. */
+export type Blip = { u: number; v: number; kind: ContactKind; born: number }
+
+export type BlipCanvas = Pick<
+  CanvasRenderingContext2D,
+  | 'save'
+  | 'restore'
+  | 'beginPath'
+  | 'arc'
+  | 'fill'
+  | 'stroke'
+  | 'strokeRect'
+  | 'globalAlpha'
+  | 'fillStyle'
+  | 'strokeStyle'
+  | 'lineWidth'
+>
+
+export type DotCanvas = Pick<
+  CanvasRenderingContext2D,
+  'beginPath' | 'arc' | 'fill' | 'stroke' | 'fillStyle' | 'strokeStyle' | 'lineWidth'
+>
+
+export type DotUnit = Pick<UnitSnapshot, 'id' | 'ownerId' | 'color' | 'x' | 'z'>
 
 export type MinimapCommand = (
   tile: TileCoord,
@@ -28,19 +73,20 @@ export class Minimap {
   private fogSettled = false
   private fogPaintedAt = -Infinity
   private cityHash = 0
-  private readonly blips: { x: number; z: number; born: number }[] = []
+  private readonly blips: Blip[] = []
+  private readonly still = matchMedia('(prefers-reduced-motion: reduce)')
 
   constructor(
     private readonly root: HTMLElement,
-    map: HTMLCanvasElement,
+    private readonly map: HTMLCanvasElement,
     private readonly marks: HTMLCanvasElement,
     world: WorldSnapshot,
     private readonly onJump: (x: number, z: number) => void,
   ) {
     this.world = world
     this.root.hidden = false
-    this.root.style.aspectRatio = `${world.width} / ${world.height}`
-    const painted = paintTerrain(map, world)
+    this.root.style.setProperty('--aspect', String(world.width / world.height))
+    const painted = paintTerrain(this.map, world)
     this.ctx = painted.ctx
     this.image = painted.image
     this.base = painted.base
@@ -74,8 +120,8 @@ export class Minimap {
     this.command = command
   }
 
-  blip(x: number, z: number) {
-    this.blips.push({ x, z, born: performance.now() })
+  blip(x: number, z: number, kind: ContactKind) {
+    this.blips.push({ u: x / this.world.width, v: z / this.world.height, kind, born: performance.now() })
   }
 
   dispose() {
@@ -85,6 +131,12 @@ export class Minimap {
     this.root.removeEventListener('pointercancel', this.onPointerCancel)
     this.root.removeEventListener('pointerleave', this.onPointerLeave)
     this.root.removeEventListener('contextmenu', preventMenu)
+    this.root.style.removeProperty('--aspect')
+    // Dropping a canvas's size attributes also blanks its bitmap.
+    for (const canvas of [this.map, this.marks]) {
+      canvas.removeAttribute('width')
+      canvas.removeAttribute('height')
+    }
   }
 
   private readonly onPointerDown = (event: PointerEvent) => {
@@ -123,6 +175,7 @@ export class Minimap {
   draw(
     units: readonly UnitSnapshot[],
     selectedIds: ReadonlySet<number>,
+    viewer: number | null,
     viewport: readonly { x: number; z: number }[],
     fog?: Float32Array,
     cities: readonly (CityState | null)[] = [],
@@ -149,15 +202,8 @@ export class Minimap {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.clearRect(0, 0, width, height)
     this.strokeViewport(ctx, viewport, width, height)
-    const rest: UnitSnapshot[] = []
-    const picked: UnitSnapshot[] = []
-    for (const unit of units) {
-      if (selectedIds.has(unit.id)) picked.push(unit)
-      else rest.push(unit)
-    }
-    for (const unit of rest) this.dot(ctx, unit, width, height, false)
-    for (const unit of picked) this.dot(ctx, unit, width, height, true)
-    this.drawBlips(ctx, width, height, now)
+    drawDots(ctx, units, selectedIds, viewer, width / this.world.width, height / this.world.height)
+    drawBlips(ctx, this.blips, width, height, now, this.still.matches)
     if (rally) this.diamond(ctx, this.toPixel({ x: rally.x + 0.5, z: rally.y + 0.5 }, width, height))
   }
 
@@ -243,50 +289,6 @@ export class Minimap {
     ctx.lineWidth = 1.5
     ctx.strokeStyle = '#f6f1dc'
     ctx.stroke()
-  }
-
-  private dot(
-    ctx: CanvasRenderingContext2D,
-    unit: UnitSnapshot,
-    width: number,
-    height: number,
-    selected: boolean,
-  ) {
-    const point = this.toPixel({ x: unit.x, z: unit.z }, width, height)
-    ctx.beginPath()
-    ctx.arc(point.x, point.y, selected ? DOT + 1.4 : DOT, 0, Math.PI * 2)
-    ctx.fillStyle = cssColor(unit.color)
-    ctx.fill()
-    if (!selected) return
-    ctx.lineWidth = 1.25
-    ctx.strokeStyle = '#f0d060'
-    ctx.stroke()
-  }
-
-  private drawBlips(ctx: CanvasRenderingContext2D, width: number, height: number, now: number) {
-    for (let i = this.blips.length - 1; i >= 0; i--) {
-      const blip = this.blips[i]
-      const age = now - blip.born
-      if (age >= BLIP_MS) {
-        this.blips.splice(i, 1)
-        continue
-      }
-      const point = this.toPixel({ x: blip.x, z: blip.z }, width, height)
-      const grow = Math.min(1, age / BLIP_HOLD_MS)
-      const alpha = age < BLIP_HOLD_MS ? 1 : 1 - (age - BLIP_HOLD_MS) / (BLIP_MS - BLIP_HOLD_MS)
-      const inner = 11
-      const outer = 16 + grow * 14
-      ctx.save()
-      ctx.translate(point.x, point.y)
-      ctx.rotate(Math.PI / 4)
-      ctx.globalAlpha = alpha
-      ctx.lineJoin = 'miter'
-      ctx.strokeStyle = '#ff1a1a'
-      ctx.lineWidth = 5
-      ctx.strokeRect(-inner, -inner, inner * 2, inner * 2)
-      ctx.strokeRect(-outer, -outer, outer * 2, outer * 2)
-      ctx.restore()
-    }
   }
 
   private diamond(ctx: CanvasRenderingContext2D, point: { x: number; y: number }) {
@@ -383,6 +385,120 @@ function paintInto(target: Uint8ClampedArray, world: WorldSnapshot) {
       target[pixel + 3] = 255
     }
   }
+}
+
+/** Draws each unit as a dot in its owner's colour, the selected ones on top; a dot hostile to `viewer` is ringed in alert red. */
+export function drawDots(
+  ctx: DotCanvas,
+  units: readonly DotUnit[],
+  selectedIds: ReadonlySet<number>,
+  viewer: number | null,
+  scaleX: number,
+  scaleY: number,
+) {
+  for (const unit of units) {
+    if (!selectedIds.has(unit.id)) dot(ctx, unit, viewer, scaleX, scaleY, false)
+  }
+  for (const unit of units) {
+    if (selectedIds.has(unit.id)) dot(ctx, unit, viewer, scaleX, scaleY, true)
+  }
+}
+
+function dot(ctx: DotCanvas, unit: DotUnit, viewer: number | null, scaleX: number, scaleY: number, selected: boolean) {
+  const x = unit.x * scaleX
+  const y = unit.z * scaleY
+  ctx.beginPath()
+  ctx.arc(x, y, selected ? DOT + 1.4 : DOT, 0, Math.PI * 2)
+  ctx.fillStyle = cssColor(unit.color)
+  ctx.fill()
+  if (selected) {
+    ctx.lineWidth = 1.25
+    ctx.strokeStyle = '#f0d060'
+    ctx.stroke()
+    return
+  }
+  if (viewer === null || !hostile(viewer, unit.ownerId)) return
+  ctx.beginPath()
+  ctx.arc(x, y, ENEMY_RING, 0, Math.PI * 2)
+  ctx.lineWidth = 2.5
+  ctx.strokeStyle = SHADE
+  ctx.stroke()
+  ctx.lineWidth = 1.25
+  ctx.strokeStyle = ALERT_RED
+  ctx.stroke()
+}
+
+/** Draws every live blip and drops the expired ones; `still` holds each ring and marker without motion. */
+export function drawBlips(
+  ctx: BlipCanvas,
+  blips: Blip[],
+  width: number,
+  height: number,
+  now: number,
+  still: boolean,
+) {
+  ctx.save()
+  for (let i = blips.length - 1; i >= 0; i--) {
+    const blip = blips[i]
+    const age = now - blip.born
+    if (age >= BLIP_MS) {
+      blips.splice(i, 1)
+      continue
+    }
+    const color = BLIP_COLORS[blip.kind]
+    const x = blip.u * width
+    const y = blip.v * height
+    if (still) {
+      blipRing(ctx, x, y, BLIP_STILL_RING, color, 1)
+      blipMarker(ctx, x, y, BLIP_MARK, color, 1)
+      continue
+    }
+    if (age < BLIP_FLASH_MS) {
+      ctx.globalAlpha = 1 - age / BLIP_FLASH_MS
+      ctx.lineWidth = BLIP_EDGE
+      ctx.strokeStyle = color
+      ctx.strokeRect(BLIP_EDGE / 2, BLIP_EDGE / 2, width - BLIP_EDGE, height - BLIP_EDGE)
+    }
+    let mark = BLIP_MARK
+    if (age < BLIP_CLOSE_MS) {
+      const reach = BLIP_REACH * Math.min(width, height)
+      const closed = 1 - (1 - age / BLIP_CLOSE_MS) ** 3
+      blipRing(ctx, x, y, reach + (BLIP_RING_CLOSED - reach) * closed, color, 1)
+    } else if (age < BLIP_CLOSE_MS + BLIP_PULSES * BLIP_PULSE_MS) {
+      const phase = ((age - BLIP_CLOSE_MS) % BLIP_PULSE_MS) / BLIP_PULSE_MS
+      blipRing(ctx, x, y, BLIP_RING_CLOSED + BLIP_PULSE_SPREAD * phase, color, 1 - phase)
+      mark = BLIP_MARK * (1.6 - 0.6 * phase)
+    }
+    blipMarker(ctx, x, y, mark, color, Math.min(1, (BLIP_MS - age) / BLIP_FADE_MS))
+  }
+  ctx.restore()
+}
+
+function blipRing(ctx: BlipCanvas, x: number, y: number, radius: number, color: string, alpha: number) {
+  ctx.globalAlpha = alpha
+  ctx.beginPath()
+  ctx.arc(x, y, radius, 0, Math.PI * 2)
+  ctx.lineWidth = 5
+  ctx.strokeStyle = SHADE
+  ctx.stroke()
+  ctx.lineWidth = 2.5
+  ctx.strokeStyle = color
+  ctx.stroke()
+}
+
+function blipMarker(ctx: BlipCanvas, x: number, y: number, radius: number, color: string, alpha: number) {
+  ctx.globalAlpha = alpha
+  ctx.beginPath()
+  ctx.arc(x, y, radius, 0, Math.PI * 2)
+  ctx.fillStyle = color
+  ctx.fill()
+  ctx.lineWidth = 1.5
+  ctx.strokeStyle = SHADE
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.arc(x, y, radius * 0.45, 0, Math.PI * 2)
+  ctx.fillStyle = '#ffffff'
+  ctx.fill()
 }
 
 function cssColor(color: number): string {

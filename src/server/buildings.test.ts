@@ -60,8 +60,9 @@ describe('buildings', () => {
     const human = game.addPlayer()
     seat(game, human.id, 10, 4)
     growPop(game, human.id, FACTORY.supply + SCOUT.supply * 2)
-    const people = game.creditIncome(human.id) / CREDIT_PER_POPULATION
-    const earned = (seconds: number) => (seconds / INCOME_SECONDS) * CREDIT_PER_POPULATION * people
+    const beat = game.creditIncome(human.id)
+    game.takeYields()
+    const paid = () => game.takeYields().length * beat
     expect(game.placeBuilding(human.id, UnitTypeId.Factory, { x: 4, y: 4 })).toBe(true)
     game.finishBuild(human.id)
     expect(human.credits).toBe(10_000 - FACTORY.cost)
@@ -72,17 +73,19 @@ describe('buildings', () => {
     expect(game.trainingFor(human.id)[0]?.progress).toBe(0)
     const pace = 1.25
     game.tick(SCOUT.buildTime / 2)
+    let earned = paid()
     expect(game.trainingFor(human.id)).toHaveLength(2)
     expect(game.trainingFor(human.id)[0]?.progress).toBeCloseTo(0.5 * pace)
     expect(game.trainingFor(human.id)[1]?.progress).toBe(0)
-    expect(human.credits).toBeCloseTo(10_000 - FACTORY.cost - SCOUT.cost * 0.5 * pace + earned(SCOUT.buildTime / 2))
+    expect(human.credits).toBeCloseTo(10_000 - FACTORY.cost - SCOUT.cost * 0.5 * pace + earned)
     game.tick(SCOUT.buildTime / 2)
     expect(game.units.filter((unit) => unit.typeId === UnitTypeId.Scout)).toHaveLength(1)
     expect(game.trainingFor(human.id)[0]?.progress).toBeCloseTo(0.25)
     game.tick(SCOUT.buildTime)
     expect(game.units.filter((unit) => unit.typeId === UnitTypeId.Scout)).toHaveLength(2)
     expect(game.trainingFor(human.id)).toHaveLength(0)
-    const floor = 10_000 - FACTORY.cost - SCOUT.cost * 2 + earned(SCOUT.buildTime * 2)
+    earned += paid()
+    const floor = 10_000 - FACTORY.cost - SCOUT.cost * 2 + earned
     expect(human.credits).toBeGreaterThanOrEqual(floor - 0.01)
   })
 
@@ -135,7 +138,7 @@ describe('buildings', () => {
     expect(human.credits).toBeCloseTo(paid)
   })
 
-  it('pays two credits per population every ten seconds, unless an enemy is near', () => {
+  it('pays credits per population every income beat, unless an enemy is near', () => {
     const width = 16
     const height = 16
     const tiles = new Uint8Array(width * height).fill(Terrain.Land)
@@ -151,8 +154,9 @@ describe('buildings', () => {
     game.tick(INCOME_SECONDS - 1)
     expect(human.credits).toBe(0)
     expect(game.takeYields()).toEqual([])
+    const income = game.creditIncome(human.id)
     game.tick(1)
-    expect(human.credits).toBe(CREDIT_PER_POPULATION * population)
+    expect(human.credits).toBe(income)
     expect(game.takeYields()).toHaveLength(1)
 
     human.credits = 0

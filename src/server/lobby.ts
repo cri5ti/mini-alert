@@ -35,6 +35,7 @@ import { ServerHost } from './host.ts'
 import { seatIsland, spreadTowns } from './island-match.ts'
 import { generateIsland, type Island } from './mapgen/generate.ts'
 import { pack, unpack } from './persist.ts'
+import { RequestBoard, type RequestsSave } from './requests.ts'
 import './state.ts'
 import { Game } from './game.ts'
 
@@ -115,7 +116,10 @@ export class Lobby {
   private readonly tokens = new Map<string, number>()
   private readonly games = new Map<number, GameRoom>()
   private readonly hallChat: ChatLine[] = []
+  private readonly board = new RequestBoard()
   private clock = 0
+
+  constructor(private readonly random: () => number = Math.random) {}
 
   gameIds(): number[] {
     return [...this.games.keys()]
@@ -134,6 +138,10 @@ export class Lobby {
         admin: member.admin,
       })),
     }
+  }
+
+  savedBoard(): RequestsSave {
+    return this.board.saved()
   }
 
   saveGame(id: number): unknown {
@@ -163,6 +171,10 @@ export class Lobby {
       this.tokens.set(member.token, member.id)
       this.nextId = Math.max(this.nextId, member.id + 1)
     }
+  }
+
+  loadBoard(data: unknown) {
+    this.board.load(data)
   }
 
   loadGame(data: unknown): boolean {
@@ -282,6 +294,10 @@ export class Lobby {
     else if (message.kind === LobbyClientKind.SetAiPace) this.setAiPace(client, message.pace)
     else if (message.kind === LobbyClientKind.ClaimAdmin) client.admin = true
     else if (message.kind === LobbyClientKind.DestroyGame) this.destroyGame(client, message.gameId)
+    else if (message.kind === LobbyClientKind.PostRequest) this.boardChanged(this.board.post(client.id, client.name, message.text))
+    else if (message.kind === LobbyClientKind.ToggleVote) this.boardChanged(this.board.toggle(client.id, message.requestId))
+    else if (message.kind === LobbyClientKind.MarkRequestDone) this.boardChanged(client.admin && this.board.markDone(message.requestId))
+    else if (message.kind === LobbyClientKind.DeleteRequest) this.boardChanged(client.admin && this.board.remove(message.requestId))
   }
 
   onGame(member: LobbyMember, message: ClientMessage, seq: number, tick: number) {
@@ -310,7 +326,7 @@ export class Lobby {
       events: [{ kind: ServerEventKind.Trace, samples, budget }],
     }
     for (const member of this.members.values()) {
-      if (!member.socket || member.gameId === null) continue
+      if (!member.admin || !member.socket || member.gameId === null) continue
       const game = this.games.get(member.gameId)
       if (!game || game.status !== RoomStatus.Playing) continue
       member.socket.sendGame(frame)
@@ -567,6 +583,10 @@ export class Lobby {
     }
   }
 
+  private boardChanged(changed: boolean) {
+    if (changed) this.refreshWaiting()
+  }
+
   private destroyGame(client: Member, gameId: unknown) {
     if (!client.admin || typeof gameId !== 'number') return
     const game = this.games.get(gameId)
@@ -800,7 +820,7 @@ export class Lobby {
     let island: Island | null = null
     for (let attempt = 0; attempt < 8; attempt++) {
       try {
-        const seed = Math.floor(Math.random() * 0x7fffffff) + 1
+        const seed = Math.floor(this.random() * 0x7fffffff) + 1
         const next = generateIsland(seed, game.mapSize, game.mapSize, { landform: game.landform, lakes: game.lakes })
         island = next
         if (next.towns.length >= need) break
@@ -901,6 +921,7 @@ export class Lobby {
       people,
       games,
       chat: this.hallChat.slice(),
+      requests: this.board.cards(member.id),
     }
   }
 

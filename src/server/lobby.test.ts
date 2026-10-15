@@ -13,6 +13,7 @@ import {
   type WaitingRoom,
   type Faction,
 } from '../shared/lobby.ts'
+import { mulberry32 } from '../shared/noise.ts'
 import { ClientMessageKind, ServerEventKind, type ServerEvent, type ServerFrame } from '../shared/protocol.ts'
 import { Terrain } from '../shared/tiles.ts'
 import { Game } from './game.ts'
@@ -260,6 +261,28 @@ describe('lobby', () => {
     expect(opened(lobby).games.has(created.gameId)).toBe(false)
   })
 
+  it('sends the trace only to an admin in a live match', async () => {
+    const lobby = new Lobby()
+    const hostSock = fake()
+    const adminSock = fake()
+    const host = lobby.connect(hostSock)
+    const admin = lobby.connect(adminSock)
+    lobby.onLobby(admin, { kind: LobbyClientKind.ClaimAdmin })
+    lobby.onLobby(host, { kind: LobbyClientKind.CreateGame })
+    await settled()
+    const created = latest<GameLobbyState>(hostSock, LobbyServerKind.GameLobby)
+    lobby.onLobby(admin, { kind: LobbyClientKind.JoinGame, gameId: created.gameId })
+    lobby.onLobby(host, { kind: LobbyClientKind.TakeSlot, index: 0 })
+    lobby.onLobby(host, { kind: LobbyClientKind.SetSlotAi, index: 1 })
+    lobby.onLobby(host, { kind: LobbyClientKind.StartGame })
+    expect(latest<GameLobbyState>(adminSock, LobbyServerKind.GameLobby).status).toBe(RoomStatus.Playing)
+
+    lobby.pushTrace([{ slot: 1, ms: 4.5 }], 33.333)
+    const traced = (sock: { game: ServerFrame[] }) => gameEvents(sock).filter((event) => event.kind === ServerEventKind.Trace)
+    expect(traced(hostSock)).toEqual([])
+    expect(traced(adminSock)).toEqual([{ kind: ServerEventKind.Trace, samples: [{ slot: 1, ms: 4.5 }], budget: 33.333 }])
+  })
+
   it('rebuilds the map when the host picks land and larger lakes', async () => {
     const lobby = new Lobby()
     const sock = fake()
@@ -284,6 +307,17 @@ describe('lobby', () => {
     let edgeLand = 0
     for (let x = 0; x < preview.width; x++) if (terrain[x] !== Terrain.Water) edgeLand += 1
     expect(edgeLand).toBeGreaterThan(preview.width / 2)
+  })
+
+  it('draws the same map in lobbies that share a random source', async () => {
+    const terrains: string[] = []
+    for (const lobby of [new Lobby(mulberry32(7)), new Lobby(mulberry32(7))]) {
+      const sock = fake()
+      lobby.onLobby(lobby.connect(sock), { kind: LobbyClientKind.CreateGame })
+      await settled()
+      terrains.push(latest<MapPreview>(sock, LobbyServerKind.Preview).terrain)
+    }
+    expect(terrains[1]).toBe(terrains[0])
   })
 
   it('pauses AI and mechanics while nobody is in a live match, then resumes', async () => {

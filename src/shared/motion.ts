@@ -1,8 +1,9 @@
-import { bayFacing, bayTile, CLIMB_RATE, cruiseAltitude, Flight, onRunway, orbitLoop, RUNWAY_LENGTH, taxiRoute } from './flight.ts'
+import { bayFacing, bayTile, CLIMB_RATE, cruiseAltitude, Flight, onRunway, orbitLoop, planeInFlight, RUNWAY_LENGTH, taxiRoute } from './flight.ts'
 import { tileCenter, type TileCoord } from './tiles.ts'
 import { Locomotion, type UnitType } from './unit-types.ts'
 
 const ARRIVE = 0.38
+const HULL_AIM_RATE = 2.5
 const HULL_CLOSE = 1.25
 const RETREAT_TICKS = 10
 const RETREAT_SCALE = 0.95
@@ -37,6 +38,23 @@ export type MotionState = {
   orbitY?: number
   loiter?: boolean
   bay?: number
+}
+
+/** A unit at rest takes an order at once on its client; one on the move keeps its course until the server answers. */
+export function atRest(unit: { readonly path: readonly TileCoord[]; readonly speed: number }): boolean {
+  return unit.path.length === 0 && unit.speed === 0
+}
+
+/**
+ * A unit within weapon range of the point it attacks, a plane only while airborne, holds: its path clears and, without
+ * a turret, its hull turns toward the point. Returns whether it holds.
+ */
+export function holdInRange(state: MotionState, type: UnitType, aim: { readonly x: number; readonly z: number }, dt: number): boolean {
+  if (type.locomotion === Locomotion.Plane && !planeInFlight(state.flight ?? Flight.Ground, state.altitude ?? 0)) return false
+  if (Math.hypot(aim.x - state.x, aim.z - state.z) > type.weapon.range) return false
+  state.path = []
+  if (type.weapon.turretRate <= 0) state.facing = turnToward(state.facing, Math.atan2(aim.x - state.x, aim.z - state.z), HULL_AIM_RATE, dt)
+  return true
 }
 
 export function wrapAngle(angle: number): number {

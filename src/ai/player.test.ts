@@ -157,6 +157,21 @@ describe('ai', () => {
     expect(workshop?.progress).toBe(0)
   })
 
+  it('trains a scout once its factory stands finished', () => {
+    const game = new Game(new World(24, 24))
+    const ai = game.addPlayer()
+    game.scenery = { coast: [], holes: [], roads: [], towns: [{ x: 10.5, y: 8.5 }], seed: 4 }
+    game.bindCities()
+    game.claimCity({ x: 10.5, y: 8.5 }, ai.id)
+    padPop(game, ai.id, FACTORY.supply + SCOUT.supply)
+    game.spawn(ai, UnitTypeId.Factory, { x: 2, y: 18 })
+    const bot = boot(game, ai.id)
+
+    bot.update(2)
+
+    expect(game.trainingFor(ai.id).map((job) => job.typeId)).toEqual([UnitTypeId.Scout])
+  })
+
   it('garrisons or explores when population blocks the factory', () => {
     const game = new Game(new World(24, 24))
     const ai = game.addPlayer()
