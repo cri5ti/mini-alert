@@ -137,6 +137,11 @@ export class Stage {
     this.syncCamera()
   }
 
+  ear(): { x: number; z: number; yaw: number; zoom: number; span: number } {
+    const zoom = this.camera.zoom
+    return { x: this.look.x, z: this.look.z, yaw: this.bearing, zoom, span: VIEW_HEIGHT / zoom }
+  }
+
   setPanAxis(x: number, z: number) {
     this.axisX = x
     this.axisZ = z

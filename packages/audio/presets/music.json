@@ -1,0 +1,112 @@
+{
+  "transition": 5,
+  "mixes": {
+    "lobby": { "calm": 0.75, "inquisitive": 0.35, "exciting": 0, "anxious": 0, "defeated": 0.05 },
+    "battle": { "calm": 0, "inquisitive": 0.15, "exciting": 0.75, "anxious": 0.25, "defeated": 0 },
+    "defeat": { "calm": 0.2, "inquisitive": 0.1, "exciting": 0, "anxious": 0.15, "defeated": 0.85 }
+  },
+  "moods": {
+    "calm": {
+      "tempo": 96, "bright": 0.55, "pad": 0.75, "bass": 0.4, "arp": 0.35, "lead": 0.3, "drums": 0.25, "stacc": 0.35, "tension": 0.15, "pulse": 0.15,
+      "prog": [[0, 3, 4, 0], [0, 4, 5, 3], [0, 5, 3, 4]]
+    },
+    "inquisitive": {
+      "tempo": 116, "bright": 0.6, "pad": 0.35, "bass": 0.7, "arp": 0.9, "lead": 0.6, "drums": 0.6, "stacc": 0.7, "tension": 0.7, "pulse": 0.3,
+      "prog": [[0, 3, 1, 4], [0, 5, 1, 4], [0, 1, 0, 4]]
+    },
+    "exciting": {
+      "tempo": 152, "bright": 0.4, "pad": 0.25, "bass": 1, "arp": 1, "lead": 0.75, "drums": 1, "stacc": 0.75, "tension": 0.3, "pulse": 0.6,
+      "prog": [[0, 0, 5, 6], [0, 6, 5, 6], [0, 5, 6, 0]]
+    },
+    "anxious": {
+      "tempo": 132, "bright": 0.08, "pad": 0.45, "bass": 0.85, "arp": 1, "lead": 0.4, "drums": 0.85, "stacc": 0.9, "tension": 0.9, "pulse": 1,
+      "prog": [[0, 1, 0, 1], [0, 0, 1, 1], [0, 6, 0, 1], [0, 5, 1, 0]]
+    },
+    "defeated": {
+      "tempo": 88, "bright": 0.02, "pad": 0.7, "bass": 0.55, "arp": 0.4, "lead": 0.4, "drums": 0.45, "stacc": 0.4, "tension": 0.2, "pulse": 0.2,
+      "prog": [[0, 5, 3, 4], [0, 3, 0, 4], [0, 6, 5, 4], [0, 0, 5, 5]]
+    }
+  },
+  "sections": {
+    "intro": { "pad": 0.8, "arp": 1, "lead": 0, "bass": 0.8, "drums": 0.7, "energy": 0 },
+    "verse": { "pad": 0.6, "arp": 0.9, "lead": 1, "bass": 1, "drums": 0.95, "energy": 0.1 },
+    "chorus": { "pad": 1, "arp": 1, "lead": 1, "bass": 1, "drums": 1, "energy": 0.3 },
+    "bridge": { "pad": 1, "arp": 0.8, "lead": 0.8, "bass": 0.8, "drums": 0.7, "energy": 0.05 },
+    "break": { "pad": 0.6, "arp": 0.6, "lead": 0, "bass": 0.6, "drums": 1, "energy": 0.2 },
+    "outro": { "pad": 1, "arp": 0.8, "lead": 0.6, "bass": 0.8, "drums": 0.8, "energy": 0, "fade": true }
+  },
+  "grooves": {
+    "drive": { "kick": [0, 4, 8, 12], "kickHi": [0, 4, 8, 10, 12], "snare": [4, 12], "hat": 1 },
+    "straight": { "kick": [0, 8], "kickHi": [0, 6, 8, 10], "snare": [4, 12], "hat": 2 },
+    "half": { "kick": [0, 3], "kickHi": [0, 3, 10, 11], "snare": [8], "hat": 1 },
+    "march": { "kick": [0, 8], "kickHi": [0, 4, 8, 12], "snare": [12, 14, 15], "hat": 2 },
+    "breakbeat": { "kick": [0, 10], "kickHi": [0, 3, 10], "snare": [4, 12], "hat": 1 },
+    "shuffle": { "kick": [0, 8], "kickHi": [0, 8, 11], "snare": [4, 12], "hat": 2 },
+    "taiko": { "kick": [0, 6, 8], "kickHi": [0, 3, 6, 8, 11, 14], "snare": [4, 12], "hat": 2 }
+  },
+  "songs": [
+    {
+      "title": "Hold the Shore",
+      "roles": ["lobby"],
+      "root": 55, "tempoMul": 0.85, "modeBias": 0.4, "swing": 0,
+      "inst": { "lead": "soft", "arp": "bell", "pad": "strings", "bass": "sub", "kit": "acoustic" },
+      "leadOct": 2, "arpStyle": "broken", "bassStyle": "root", "groove": "half",
+      "hook": [0, 4, 5, 3], "bridge": [3, 5, 4, 0],
+      "intro": 4, "body": [["verse", 8], ["chorus", 8], ["bridge", 4], ["chorus", 8]], "outro": 6, "passes": 1
+    },
+    {
+      "title": "Scout Party",
+      "roles": ["battle"],
+      "root": 50, "tempoMul": 1.05, "modeBias": 0, "swing": 0,
+      "inst": { "lead": "brass", "arp": "pluck", "pad": "strings", "bass": "electric", "kit": "tight" },
+      "leadOct": 2, "arpStyle": "updown", "bassStyle": "pulse", "groove": "drive",
+      "hook": [0, 5, 3, 4], "bridge": [3, 4, 5, 4],
+      "intro": 4, "body": [["verse", 8], ["chorus", 8], ["verse", 8], ["bridge", 4], ["chorus", 8]], "outro": 4, "passes": 2
+    },
+    {
+      "title": "Iron Column",
+      "roles": ["battle"],
+      "root": 45, "tempoMul": 1, "modeBias": -0.6, "swing": 0,
+      "inst": { "lead": "guitar", "arp": "stab", "pad": "synth", "bass": "reese", "kit": "industrial" },
+      "leadOct": 1, "arpStyle": "pedal", "bassStyle": "pulse", "groove": "march",
+      "hook": [0, 6, 5, 6], "bridge": [5, 6, 0, 0],
+      "intro": 4, "body": [["verse", 8], ["chorus", 8], ["break", 4], ["chorus", 8]], "outro": 4, "passes": 2
+    },
+    {
+      "title": "Northern Lights",
+      "roles": ["lobby", "battle"],
+      "root": 52, "tempoMul": 1.05, "modeBias": 0.3, "swing": 0,
+      "inst": { "lead": "bell", "arp": "marimba", "pad": "choir", "bass": "sub", "kit": "electro" },
+      "leadOct": 2, "arpStyle": "broken", "bassStyle": "octave", "groove": "half",
+      "hook": [3, 4, 0, 5], "bridge": [5, 3, 4, 4],
+      "intro": 4, "body": [["verse", 8], ["chorus", 8], ["bridge", 4], ["chorus", 8]], "outro": 4, "passes": 2
+    },
+    {
+      "title": "Night Raid",
+      "roles": ["battle"],
+      "root": 48, "tempoMul": 1.2, "modeBias": -0.3, "swing": 0,
+      "inst": { "lead": "supersaw", "arp": "chip", "pad": "synth", "bass": "acid", "kit": "electro" },
+      "leadOct": 2, "arpStyle": "up", "bassStyle": "octave", "groove": "breakbeat",
+      "hook": [0, 0, 5, 6], "bridge": [5, 5, 6, 6],
+      "intro": 4, "body": [["verse", 8], ["chorus", 8], ["break", 4], ["verse", 4], ["chorus", 8]], "outro": 4, "passes": 2
+    },
+    {
+      "title": "Steel Harbor",
+      "roles": ["battle"],
+      "root": 53, "tempoMul": 1.1, "modeBias": 0, "swing": 0.2,
+      "inst": { "lead": "guitar", "arp": "organ", "pad": "organ", "bass": "electric", "kit": "acoustic" },
+      "leadOct": 1, "arpStyle": "broken", "bassStyle": "walking", "groove": "shuffle",
+      "hook": [0, 3, 4, 0], "bridge": [3, 3, 4, 4],
+      "intro": 4, "body": [["verse", 8], ["chorus", 8], ["break", 4], ["chorus", 8]], "outro": 4, "passes": 2
+    },
+    {
+      "title": "War Drums",
+      "roles": ["battle"],
+      "root": 43, "tempoMul": 0.95, "modeBias": -0.5, "swing": 0,
+      "inst": { "lead": "brass", "arp": "marimba", "pad": "choir", "bass": "fm", "kit": "taiko" },
+      "leadOct": 1, "arpStyle": "pedal", "bassStyle": "root", "groove": "taiko",
+      "hook": [0, 5, 6, 0], "bridge": [3, 4, 3, 4],
+      "intro": 4, "body": [["verse", 8], ["break", 4], ["chorus", 8], ["verse", 8], ["chorus", 8]], "outro": 4, "passes": 1
+    }
+  ]
+}

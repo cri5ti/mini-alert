@@ -2,7 +2,7 @@ import './style.css'
 import { adminEnabled } from './client/admin.ts'
 import { Commander } from './client/commander.ts'
 import { LobbyView } from './client/lobby-ui.ts'
-import { Music } from './client/music.ts'
+import { sound } from './client/sound.ts'
 import { rememberedName, rememberName } from './client/player-name.ts'
 import { bindMenu } from './client/menu.ts'
 import { Net } from './client/net.ts'
@@ -74,17 +74,16 @@ let toldWin = false
 let preview: MapPreview | null = null
 let aimed = false
 
-const music = new Music()
 bindMenu({
   onMusic(on) {
-    music.setMuted(!on)
+    sound.setMuted(!on)
   },
   onSurrender() {
     net.sendLobby({ kind: LobbyClientKind.LeaveRoom })
   },
 })
 document.body.classList.add('lobby')
-window.addEventListener('pointerdown', () => music.resume())
+window.addEventListener('pointerdown', () => sound.resume())
 
 let claimedName: string | null = null
 const admin = adminEnabled(location.search)
@@ -101,11 +100,11 @@ const lobby = new LobbyView(lobbyRoot, {
     await navigator.clipboard.writeText(seatLink(net.seat))
   },
   createGame() {
-    music.lobby()
+    sound.lobby()
     net.sendLobby({ kind: LobbyClientKind.CreateGame })
   },
   joinGame(id) {
-    music.lobby()
+    sound.lobby()
     net.sendLobby({ kind: LobbyClientKind.JoinGame, gameId: id })
   },
   leave() {
@@ -166,7 +165,7 @@ net.onLobby = (message) => {
   if (message.kind === LobbyServerKind.Replaced) {
     net.pause()
     leaveMatch()
-    music.silent()
+    sound.silent()
     elsewhere.hidden = false
     return
   }
@@ -177,7 +176,7 @@ net.onLobby = (message) => {
   }
   if (message.kind === LobbyServerKind.Waiting) {
     leaveMatch()
-    music.silent()
+    sound.silent()
     preview = null
     lobby.showWaiting(message)
     claimName(message.you.name)
@@ -191,14 +190,14 @@ net.onLobby = (message) => {
   }
   if (message.status === RoomStatus.Playing) {
     showMatch()
-    music.match()
+    sound.match()
     paintVision()
     paintLegend()
     noteOutcome()
     return
   }
   leaveMatch()
-  music.lobby()
+  sound.lobby()
   lobby.showGame(message, preview)
   claimName(message.you.name)
 }
@@ -250,6 +249,7 @@ function leaveMatch() {
   aimed = false
   player.setSpectating(false)
   player.reset()
+  sound.reset()
   replica.reset()
   live.view?.dispose()
   live.view = null
@@ -341,11 +341,13 @@ function noteOutcome() {
   const mine = factions.find((faction) => faction.playerId === seatId)
   if (mine?.defeated && !toldDefeat) {
     toldDefeat = true
+    sound.outcome(false)
     showOutcome('Defeated', 'Your forces are gone.')
   }
   const alive = factions.filter((faction) => !faction.defeated)
   if (mine && !mine.defeated && !toldWin && alive.length === 1 && factions.some((faction) => faction.defeated)) {
     toldWin = true
+    sound.outcome(true)
     showOutcome('Victory', 'You are the last player.')
   }
 }
@@ -402,7 +404,10 @@ if (orders) {
     if (!entry) return
     event.preventDefault()
     if (event.shiftKey) entry.onRemove?.()
-    else if (entry.button.classList.contains('ready')) entry.onAdd()
+    else if (entry.button.classList.contains('ready')) {
+      sound.click()
+      entry.onAdd()
+    } else refuseOrder(entry.id)
   })
 }
 cityFocusRange?.addEventListener('input', () => {
@@ -571,7 +576,11 @@ function createTile(
       onRemove?.()
       return
     }
-    if (!button.classList.contains('ready')) return
+    if (!button.classList.contains('ready')) {
+      refuseOrder(id)
+      return
+    }
+    sound.click()
     onAdd()
   })
   button.addEventListener('contextmenu', (event) => {
@@ -654,6 +663,11 @@ function structureQueue(): Map<UnitTypeId, { count: number; progress: number }> 
   return queue
 }
 
+function refuseOrder(id: UnitTypeId | null) {
+  const price = id === null ? replica.cityBuildCost(player.aimedTile()) : UNIT_TYPES[id].cost
+  sound.refused(price !== null && replica.credits < price)
+}
+
 function costLine(credits: number, supply: number): string {
   const price = credits > 0 ? credits.toLocaleString('en-US') : ''
   if (supply <= 0) return price
@@ -685,11 +699,28 @@ const frame = (now: number) => {
     const hallLayout = hallIndex === null ? null : replica.settledLayouts()[hallIndex]
     const hallBuilding = hallLayout?.buildings.find((building) => building.keep) ?? null
     view.showHall(hallBuilding ? { x: hallBuilding.x + HALL_SPAN / 2, z: hallBuilding.y + HALL_SPAN / 2 } : null)
+    const drawn = replica.drawn()
+    const shots = replica.takeShots()
+    const hits = replica.takeHits()
+    const selected = player.selected()
+    sound.sync({
+      units: drawn,
+      shots,
+      hits,
+      cities: replica.cities,
+      credits: replica.credits,
+      playerId: replica.playerId,
+      terrain: replica.world?.terrain ?? null,
+      width: replica.world?.width ?? 0,
+      selected: selected.map((unit) => unit.id),
+      ear: view.ear(),
+      dt: frameDt,
+    })
     view.render(
-      replica.drawn(),
-      player.selected(),
-      replica.takeShots(),
-      replica.takeHits(),
+      drawn,
+      selected,
+      shots,
+      hits,
       replica.playerId,
       replica.cities,
       replica.settledLayouts(),

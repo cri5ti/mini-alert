@@ -1,0 +1,10 @@
+{
+  "master": 0.7,
+  "reverb": 1,
+  "refDistance": 12,
+  "rolloff": 1,
+  "maxDistance": 80,
+  "airDistance": 36,
+  "listenerHeight": 14,
+  "panning": "HRTF"
+}

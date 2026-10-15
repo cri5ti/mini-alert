@@ -1,0 +1,3117 @@
+[
+  {
+    "id": "weapon.mg",
+    "group": "weapon",
+    "label": "Machine gun",
+    "game": "One scout round. Loop to hear the 0.08s cyclic rate.",
+    "spatial": true,
+    "repeatMs": 80,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 2500,
+        "d": 0.03,
+        "gain": 0.5,
+        "drive": 3,
+        "wet": 0.1
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 3500,
+        "f1": 500,
+        "d": 0.08,
+        "gain": 0.7,
+        "drive": 4,
+        "wet": 0.2
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 200,
+        "d": 0.12,
+        "gain": 0.5
+      }
+    ]
+  },
+  {
+    "id": "weapon.gunship",
+    "group": "weapon",
+    "label": "Gunship cannon",
+    "game": "Gunship shell, one round.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 1500,
+        "d": 0.041,
+        "gain": 0.7,
+        "drive": 6,
+        "wet": 0.35
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 5300,
+        "f1": 180,
+        "a": 0.001,
+        "hold": 0.034,
+        "d": 0.7,
+        "gain": 1,
+        "drive": 8,
+        "wet": 0.35
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 180,
+        "f1": 60,
+        "q": 0.9,
+        "a": 0.006,
+        "hold": 0.018,
+        "d": 1.43,
+        "gain": 0.87,
+        "wet": 0.525
+      },
+      {
+        "op": "burst",
+        "at": 0.32,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 900,
+        "f1": 200,
+        "a": 0.02,
+        "d": 0.95,
+        "gain": 0.22,
+        "wet": 0.9
+      }
+    ]
+  },
+  {
+    "id": "weapon.shell-med",
+    "group": "weapon",
+    "label": "Medium shell",
+    "game": "Medium tank shell, one round.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 1500,
+        "d": 0.048,
+        "gain": 0.7,
+        "drive": 6,
+        "wet": 0.4
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 4800,
+        "f1": 180,
+        "a": 0.001,
+        "hold": 0.044,
+        "d": 0.95,
+        "gain": 1,
+        "drive": 8,
+        "wet": 0.4
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 180,
+        "f1": 60,
+        "q": 0.9,
+        "a": 0.006,
+        "hold": 0.03,
+        "d": 1.88,
+        "gain": 0.92,
+        "wet": 0.6
+      },
+      {
+        "op": "burst",
+        "at": 0.37,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 900,
+        "f1": 200,
+        "a": 0.02,
+        "d": 1.2,
+        "gain": 0.27,
+        "wet": 0.9
+      },
+      {
+        "op": "metal",
+        "at": 0.6,
+        "f": 900,
+        "d": 0.25,
+        "gain": 0.03,
+        "wet": 0.1
+      }
+    ]
+  },
+  {
+    "id": "weapon.shell-heavy",
+    "group": "weapon",
+    "label": "Heavy shell",
+    "game": "Heavy tank shell, one round.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 1500,
+        "d": 0.06,
+        "gain": 0.7,
+        "drive": 6,
+        "wet": 0.55
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 4000,
+        "f1": 180,
+        "a": 0.001,
+        "hold": 0.06,
+        "d": 1.35,
+        "gain": 1,
+        "drive": 8,
+        "wet": 0.55
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 180,
+        "f1": 60,
+        "q": 0.9,
+        "a": 0.006,
+        "hold": 0.05,
+        "d": 2.6,
+        "gain": 1,
+        "wet": 0.825
+      },
+      {
+        "op": "burst",
+        "at": 0.45,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 900,
+        "f1": 200,
+        "a": 0.02,
+        "d": 1.6,
+        "gain": 0.35,
+        "wet": 0.9
+      }
+    ]
+  },
+  {
+    "id": "weapon.howitzer",
+    "group": "weapon",
+    "label": "Howitzer",
+    "game": "Artillery shell, one round. The sim fires the pair 0.4s apart.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 1500,
+        "d": 0.06,
+        "gain": 0.7,
+        "drive": 6,
+        "wet": 0.6
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 4000,
+        "f1": 180,
+        "a": 0.001,
+        "hold": 0.06,
+        "d": 1.35,
+        "gain": 1,
+        "drive": 8,
+        "wet": 0.6
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 180,
+        "f1": 60,
+        "q": 0.9,
+        "a": 0.006,
+        "hold": 0.05,
+        "d": 2.6,
+        "gain": 1,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": 0.45,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 900,
+        "f1": 200,
+        "a": 0.02,
+        "d": 1.6,
+        "gain": 0.35,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": 0.9,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 400,
+        "f1": 120,
+        "a": 0.08,
+        "d": 1.6,
+        "gain": 0.22,
+        "wet": 0.95
+      }
+    ]
+  },
+  {
+    "id": "weapon.incoming",
+    "group": "weapon",
+    "label": "Incoming shell",
+    "game": "Artillery round in the air, played at the target.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sine",
+        "f0": 900,
+        "f1": 280,
+        "a": 0.05,
+        "d": 0.7,
+        "gain": 0.08,
+        "filter": "bandpass",
+        "fc": 1200,
+        "q": 2
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "bandpass",
+        "f0": 700,
+        "f1": 1400,
+        "q": 0.8,
+        "a": 0.1,
+        "d": 0.55,
+        "gain": 0.12
+      }
+    ]
+  },
+  {
+    "id": "weapon.rocket",
+    "group": "weapon",
+    "label": "Rocket launch",
+    "game": "Jet rocket leaving the rail.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 2200,
+        "d": 0.02,
+        "gain": 0.35,
+        "drive": 3
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "bandpass",
+        "f0": 400,
+        "f1": 2400,
+        "q": 0.8,
+        "a": 0.04,
+        "d": 0.45,
+        "gain": 0.55,
+        "wet": 0.2
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 200,
+        "f1": 80,
+        "a": 0.02,
+        "d": 0.5,
+        "gain": 0.4
+      },
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sawtooth",
+        "f0": 90,
+        "f1": 140,
+        "a": 0.05,
+        "d": 0.35,
+        "gain": 0.08,
+        "filter": "lowpass",
+        "fc": 600
+      }
+    ]
+  },
+  {
+    "id": "weapon.naval",
+    "group": "weapon",
+    "label": "Naval gun",
+    "game": "Cruiser shell, one round, with the slap off the water.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 1500,
+        "d": 0.057,
+        "gain": 0.7,
+        "drive": 6,
+        "wet": 0.95
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 4200,
+        "f1": 180,
+        "a": 0.001,
+        "hold": 0.056,
+        "d": 1.25,
+        "gain": 1,
+        "drive": 8,
+        "wet": 0.95
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 180,
+        "f1": 60,
+        "q": 0.9,
+        "a": 0.006,
+        "hold": 0.045,
+        "d": 2.42,
+        "gain": 0.98,
+        "wet": 1.425
+      },
+      {
+        "op": "burst",
+        "at": 0.43,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 900,
+        "f1": 200,
+        "a": 0.02,
+        "d": 1.5,
+        "gain": 0.33,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": 0.5,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 500,
+        "d": 1.2,
+        "gain": 0.2,
+        "wet": 0.9
+      }
+    ]
+  },
+  {
+    "id": "weapon.turret",
+    "group": "weapon",
+    "label": "Turret gun",
+    "game": "Turret shell, one round, with the breech cycling.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 1500,
+        "d": 0.05,
+        "gain": 0.7,
+        "drive": 6,
+        "wet": 0.45
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 4700,
+        "f1": 180,
+        "a": 0.001,
+        "hold": 0.046,
+        "d": 1,
+        "gain": 1,
+        "drive": 8,
+        "wet": 0.45
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 180,
+        "f1": 60,
+        "q": 0.9,
+        "a": 0.006,
+        "hold": 0.033,
+        "d": 1.97,
+        "gain": 0.93,
+        "wet": 0.675
+      },
+      {
+        "op": "burst",
+        "at": 0.38,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 900,
+        "f1": 200,
+        "a": 0.02,
+        "d": 1.25,
+        "gain": 0.28,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": 0.28,
+        "color": "white",
+        "filter": "bandpass",
+        "f0": 1200,
+        "q": 3,
+        "d": 0.06,
+        "gain": 0.25
+      },
+      {
+        "op": "metal",
+        "at": 0.3,
+        "f": 500,
+        "d": 0.3,
+        "gain": 0.05,
+        "wet": 0.1
+      }
+    ]
+  },
+  {
+    "id": "weapon.turret-slew",
+    "group": "weapon",
+    "label": "Turret slew",
+    "game": "Turret acquiring a new target. Not every round.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sawtooth",
+        "f0": 180,
+        "f1": 260,
+        "a": 0.04,
+        "hold": 0.25,
+        "d": 0.08,
+        "gain": 0.1,
+        "filter": "lowpass",
+        "fc": 900,
+        "vibrato": 4,
+        "vibratoRate": 18
+      },
+      {
+        "op": "burst",
+        "at": 0.32,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 300,
+        "d": 0.08,
+        "gain": 0.35
+      }
+    ]
+  },
+  {
+    "id": "impact.bullet",
+    "group": "impact",
+    "label": "Bullet hit",
+    "game": "A scout round that does not destroy the target.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 3000,
+        "d": 0.015,
+        "gain": 0.25
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "bandpass",
+        "f0": 1800,
+        "q": 1.2,
+        "d": 0.04,
+        "gain": 0.3
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 250,
+        "d": 0.06,
+        "gain": 0.2
+      }
+    ]
+  },
+  {
+    "id": "impact.shell",
+    "group": "impact",
+    "label": "Shell hit",
+    "game": "A shell impact that does not destroy the target.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 900,
+        "d": 0.053,
+        "gain": 0.6,
+        "drive": 5,
+        "wet": 0.46
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 2660,
+        "f1": 150,
+        "a": 0.004,
+        "hold": 0.056,
+        "d": 0.94,
+        "gain": 1,
+        "drive": 6,
+        "wet": 0.46
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 220,
+        "f1": 55,
+        "q": 0.9,
+        "a": 0.031,
+        "hold": 0.188,
+        "d": 1.97,
+        "gain": 0.9,
+        "wet": 0.46
+      },
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sine",
+        "f0": 51.7,
+        "f1": 28,
+        "a": 0.01,
+        "hold": 0.094,
+        "d": 1.24,
+        "gain": 0.566
+      },
+      {
+        "op": "scatter",
+        "at": 0.05,
+        "dur": 0.94,
+        "count": 13,
+        "skew": 1.5,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "bandpass",
+            "f0": [
+              800,
+              3000
+            ],
+            "q": 2,
+            "d": [
+              0.01,
+              0.04
+            ],
+            "gain": [
+              0.03,
+              0.12
+            ],
+            "pan": [
+              -0.4,
+              0.4
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "impact.rocket",
+    "group": "impact",
+    "label": "Rocket hit",
+    "game": "A jet rocket impact that does not destroy the target.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 900,
+        "d": 0.077,
+        "gain": 0.6,
+        "drive": 5,
+        "wet": 0.66
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 3860,
+        "f1": 150,
+        "a": 0.004,
+        "hold": 0.104,
+        "d": 1.74,
+        "gain": 1,
+        "drive": 6,
+        "wet": 0.66
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 220,
+        "f1": 55,
+        "q": 0.9,
+        "a": 0.051,
+        "hold": 0.348,
+        "d": 3.37,
+        "gain": 0.9,
+        "wet": 0.66
+      },
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sine",
+        "f0": 45.7,
+        "f1": 28,
+        "a": 0.01,
+        "hold": 0.174,
+        "d": 2.04,
+        "gain": 0.686
+      },
+      {
+        "op": "scatter",
+        "at": 0.05,
+        "dur": 1.74,
+        "count": 25,
+        "skew": 1.5,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "bandpass",
+            "f0": [
+              800,
+              3000
+            ],
+            "q": 2,
+            "d": [
+              0.01,
+              0.04
+            ],
+            "gain": [
+              0.03,
+              0.12
+            ],
+            "pan": [
+              -0.4,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.25,
+          0.4
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 500,
+        "f1": 150,
+        "a": 0.05,
+        "d": 1.62,
+        "gain": 0.186,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.7,
+          0.9
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 350,
+        "f1": 120,
+        "a": 0.08,
+        "d": 1.82,
+        "gain": 0.124,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": 0.05,
+        "color": "pink",
+        "filter": "bandpass",
+        "f0": 300,
+        "f1": 900,
+        "a": 0.1,
+        "d": 1.1,
+        "gain": 0.45,
+        "wet": 0.35
+      }
+    ]
+  },
+  {
+    "id": "impact.splash",
+    "group": "impact",
+    "label": "Water impact",
+    "game": "A round hitting open water.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "bandpass",
+        "f0": 800,
+        "f1": 2200,
+        "q": 0.7,
+        "a": 0.04,
+        "d": 0.9,
+        "gain": 0.45,
+        "wet": 0.35
+      },
+      {
+        "op": "burst",
+        "at": 0.12,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 3000,
+        "a": 0.15,
+        "d": 0.8,
+        "gain": 0.12
+      },
+      {
+        "op": "scatter",
+        "at": 0.15,
+        "dur": 0.8,
+        "count": 8,
+        "skew": 1.2,
+        "steps": [
+          {
+            "op": "tone",
+            "type": "sine",
+            "f0": [
+              500,
+              1100
+            ],
+            "f1Mul": 2.2,
+            "d": 0.04,
+            "gain": 0.04
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "death.scout",
+    "group": "impact",
+    "label": "Scout destroyed",
+    "game": "Scout car destroyed.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 900,
+        "d": 0.058,
+        "gain": 0.6,
+        "drive": 5,
+        "wet": 0.5
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 2900,
+        "f1": 150,
+        "a": 0.004,
+        "hold": 0.066,
+        "d": 1.1,
+        "gain": 1,
+        "drive": 6,
+        "wet": 0.5
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 220,
+        "f1": 55,
+        "q": 0.9,
+        "a": 0.035,
+        "hold": 0.22,
+        "d": 2.25,
+        "gain": 0.9,
+        "wet": 0.5
+      },
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sine",
+        "f0": 50.5,
+        "f1": 28,
+        "a": 0.01,
+        "hold": 0.11,
+        "d": 1.4,
+        "gain": 0.59
+      },
+      {
+        "op": "scatter",
+        "at": 0.05,
+        "dur": 1.1,
+        "count": 15,
+        "skew": 1.5,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "bandpass",
+            "f0": [
+              800,
+              3000
+            ],
+            "q": 2,
+            "d": [
+              0.01,
+              0.04
+            ],
+            "gain": [
+              0.03,
+              0.12
+            ],
+            "pan": [
+              -0.4,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "op": "burst",
+        "at": 0.05,
+        "color": "pink",
+        "filter": "bandpass",
+        "f0": 300,
+        "f1": 900,
+        "a": 0.1,
+        "d": 1,
+        "gain": 0.4,
+        "wet": 0.3
+      },
+      {
+        "op": "scatter",
+        "at": 0.3,
+        "dur": 1,
+        "count": 4,
+        "skew": 1,
+        "steps": [
+          {
+            "op": "metal",
+            "f": [
+              900,
+              1600
+            ],
+            "d": 0.2,
+            "gain": 0.04
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "death.med-tank",
+    "group": "impact",
+    "label": "Medium tank destroyed",
+    "game": "Medium tank destroyed.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 900,
+        "d": 0.073,
+        "gain": 0.6,
+        "drive": 5,
+        "wet": 0.625
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 3650,
+        "f1": 150,
+        "a": 0.004,
+        "hold": 0.096,
+        "d": 1.6,
+        "gain": 1,
+        "drive": 6,
+        "wet": 0.625
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 220,
+        "f1": 55,
+        "q": 0.9,
+        "a": 0.048,
+        "hold": 0.32,
+        "d": 3.125,
+        "gain": 0.9,
+        "wet": 0.625
+      },
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sine",
+        "f0": 46.8,
+        "f1": 28,
+        "a": 0.01,
+        "hold": 0.16,
+        "d": 1.9,
+        "gain": 0.665
+      },
+      {
+        "op": "scatter",
+        "at": 0.05,
+        "dur": 1.6,
+        "count": 23,
+        "skew": 1.5,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "bandpass",
+            "f0": [
+              800,
+              3000
+            ],
+            "q": 2,
+            "d": [
+              0.01,
+              0.04
+            ],
+            "gain": [
+              0.03,
+              0.12
+            ],
+            "pan": [
+              -0.4,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.25,
+          0.4
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 500,
+        "f1": 150,
+        "a": 0.05,
+        "d": 1.55,
+        "gain": 0.165,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.7,
+          0.9
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 350,
+        "f1": 120,
+        "a": 0.08,
+        "d": 1.75,
+        "gain": 0.11,
+        "wet": 0.9
+      },
+      {
+        "op": "metal",
+        "at": 0,
+        "f": 220,
+        "d": 1.5,
+        "gain": 0.12,
+        "wet": 0.5
+      },
+      {
+        "op": "scatter",
+        "at": 0.6,
+        "dur": 2,
+        "count": 4,
+        "skew": 1,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "highpass",
+            "f0": 1500,
+            "d": 0.04,
+            "gain": [
+              0.2,
+              0.4
+            ],
+            "drive": 3,
+            "wet": 0.4
+          },
+          {
+            "op": "burst",
+            "color": "brown",
+            "filter": "lowpass",
+            "f0": 250,
+            "d": 0.3,
+            "gain": 0.4
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "death.heavy-tank",
+    "group": "impact",
+    "label": "Heavy tank destroyed",
+    "game": "Heavy tank destroyed.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 900,
+        "d": 0.088,
+        "gain": 0.6,
+        "drive": 5,
+        "wet": 0.75
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 4400,
+        "f1": 150,
+        "a": 0.004,
+        "hold": 0.126,
+        "d": 2.1,
+        "gain": 1,
+        "drive": 6,
+        "wet": 0.75
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 220,
+        "f1": 55,
+        "q": 0.9,
+        "a": 0.06,
+        "hold": 0.42,
+        "d": 4,
+        "gain": 0.9,
+        "wet": 0.75
+      },
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sine",
+        "f0": 43,
+        "f1": 28,
+        "a": 0.01,
+        "hold": 0.21,
+        "d": 2.4,
+        "gain": 0.74
+      },
+      {
+        "op": "scatter",
+        "at": 0.05,
+        "dur": 2.1,
+        "count": 30,
+        "skew": 1.5,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "bandpass",
+            "f0": [
+              800,
+              3000
+            ],
+            "q": 2,
+            "d": [
+              0.01,
+              0.04
+            ],
+            "gain": [
+              0.03,
+              0.12
+            ],
+            "pan": [
+              -0.4,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.25,
+          0.4
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 500,
+        "f1": 150,
+        "a": 0.05,
+        "d": 1.8,
+        "gain": 0.24,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.7,
+          0.9
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 350,
+        "f1": 120,
+        "a": 0.08,
+        "d": 2,
+        "gain": 0.16,
+        "wet": 0.9
+      },
+      {
+        "op": "metal",
+        "at": 0,
+        "f": 140,
+        "d": 2,
+        "gain": 0.15,
+        "wet": 0.5
+      },
+      {
+        "op": "burst",
+        "at": 0.4,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 900,
+        "d": 0.058,
+        "gain": 0.6,
+        "drive": 5,
+        "wet": 0.5
+      },
+      {
+        "op": "burst",
+        "at": 0.4,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 2900,
+        "f1": 150,
+        "a": 0.004,
+        "hold": 0.066,
+        "d": 1.1,
+        "gain": 1,
+        "drive": 6,
+        "wet": 0.5
+      },
+      {
+        "op": "burst",
+        "at": 0.4,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 220,
+        "f1": 55,
+        "q": 0.9,
+        "a": 0.035,
+        "hold": 0.22,
+        "d": 2.25,
+        "gain": 0.9,
+        "wet": 0.5
+      },
+      {
+        "op": "tone",
+        "at": 0.4,
+        "type": "sine",
+        "f0": 50.5,
+        "f1": 28,
+        "a": 0.01,
+        "hold": 0.11,
+        "d": 1.4,
+        "gain": 0.59
+      },
+      {
+        "op": "scatter",
+        "at": 0.45,
+        "dur": 1.1,
+        "count": 15,
+        "skew": 1.5,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "bandpass",
+            "f0": [
+              800,
+              3000
+            ],
+            "q": 2,
+            "d": [
+              0.01,
+              0.04
+            ],
+            "gain": [
+              0.03,
+              0.12
+            ],
+            "pan": [
+              -0.4,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "op": "scatter",
+        "at": 0.8,
+        "dur": 3,
+        "count": 8,
+        "skew": 1,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "highpass",
+            "f0": 1500,
+            "d": 0.04,
+            "gain": [
+              0.2,
+              0.4
+            ],
+            "drive": 3,
+            "wet": 0.4
+          },
+          {
+            "op": "burst",
+            "color": "brown",
+            "filter": "lowpass",
+            "f0": 250,
+            "d": 0.3,
+            "gain": 0.4
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "death.artillery",
+    "group": "impact",
+    "label": "Artillery destroyed",
+    "game": "Artillery destroyed. The ready ammunition cooks off.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 900,
+        "d": 0.065,
+        "gain": 0.6,
+        "drive": 5,
+        "wet": 0.56
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 3260,
+        "f1": 150,
+        "a": 0.004,
+        "hold": 0.08,
+        "d": 1.34,
+        "gain": 1,
+        "drive": 6,
+        "wet": 0.56
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 220,
+        "f1": 55,
+        "q": 0.9,
+        "a": 0.041,
+        "hold": 0.268,
+        "d": 2.67,
+        "gain": 0.9,
+        "wet": 0.56
+      },
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sine",
+        "f0": 48.7,
+        "f1": 28,
+        "a": 0.01,
+        "hold": 0.134,
+        "d": 1.64,
+        "gain": 0.626
+      },
+      {
+        "op": "scatter",
+        "at": 0.05,
+        "dur": 1.34,
+        "count": 19,
+        "skew": 1.5,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "bandpass",
+            "f0": [
+              800,
+              3000
+            ],
+            "q": 2,
+            "d": [
+              0.01,
+              0.04
+            ],
+            "gain": [
+              0.03,
+              0.12
+            ],
+            "pan": [
+              -0.4,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.25,
+          0.4
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 500,
+        "f1": 150,
+        "a": 0.05,
+        "d": 1.42,
+        "gain": 0.126,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.7,
+          0.9
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 350,
+        "f1": 120,
+        "a": 0.08,
+        "d": 1.62,
+        "gain": 0.084,
+        "wet": 0.9
+      },
+      {
+        "op": "scatter",
+        "at": 0.25,
+        "dur": 2.4,
+        "count": 7,
+        "skew": 1,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "highpass",
+            "f0": 1500,
+            "d": 0.04,
+            "gain": [
+              0.2,
+              0.4
+            ],
+            "drive": 3,
+            "wet": 0.4
+          },
+          {
+            "op": "burst",
+            "color": "brown",
+            "filter": "lowpass",
+            "f0": 250,
+            "d": 0.3,
+            "gain": 0.4
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "death.gunship",
+    "group": "impact",
+    "label": "Gunship destroyed",
+    "game": "Gunship shot down.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 900,
+        "d": 0.07,
+        "gain": 0.6,
+        "drive": 5,
+        "wet": 0.6
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 3500,
+        "f1": 150,
+        "a": 0.004,
+        "hold": 0.09,
+        "d": 1.5,
+        "gain": 1,
+        "drive": 6,
+        "wet": 0.6
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 220,
+        "f1": 55,
+        "q": 0.9,
+        "a": 0.045,
+        "hold": 0.3,
+        "d": 2.95,
+        "gain": 0.9,
+        "wet": 0.6
+      },
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sine",
+        "f0": 47.5,
+        "f1": 28,
+        "a": 0.01,
+        "hold": 0.15,
+        "d": 1.8,
+        "gain": 0.65
+      },
+      {
+        "op": "scatter",
+        "at": 0.05,
+        "dur": 1.5,
+        "count": 21,
+        "skew": 1.5,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "bandpass",
+            "f0": [
+              800,
+              3000
+            ],
+            "q": 2,
+            "d": [
+              0.01,
+              0.04
+            ],
+            "gain": [
+              0.03,
+              0.12
+            ],
+            "pan": [
+              -0.4,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.25,
+          0.4
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 500,
+        "f1": 150,
+        "a": 0.05,
+        "d": 1.5,
+        "gain": 0.15,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.7,
+          0.9
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 350,
+        "f1": 120,
+        "a": 0.08,
+        "d": 1.7,
+        "gain": 0.1,
+        "wet": 0.9
+      },
+      {
+        "op": "scatter",
+        "at": 0.3,
+        "dur": 1.5,
+        "count": 5,
+        "skew": 1.2,
+        "steps": [
+          {
+            "op": "metal",
+            "f": [
+              400,
+              1200
+            ],
+            "d": 0.3,
+            "gain": 0.04
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "death.jet",
+    "group": "impact",
+    "label": "Jet destroyed",
+    "game": "Jet shot down.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "bandpass",
+        "f0": 1800,
+        "f1": 400,
+        "q": 1,
+        "a": 0.9,
+        "d": 0.2,
+        "gain": 0.5
+      },
+      {
+        "op": "burst",
+        "at": 1,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 900,
+        "d": 0.091,
+        "gain": 0.6,
+        "drive": 5,
+        "wet": 0.775
+      },
+      {
+        "op": "burst",
+        "at": 1,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 4550,
+        "f1": 150,
+        "a": 0.004,
+        "hold": 0.132,
+        "d": 2.2,
+        "gain": 1,
+        "drive": 6,
+        "wet": 0.775
+      },
+      {
+        "op": "burst",
+        "at": 1,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 220,
+        "f1": 55,
+        "q": 0.9,
+        "a": 0.063,
+        "hold": 0.44,
+        "d": 4.175,
+        "gain": 0.9,
+        "wet": 0.775
+      },
+      {
+        "op": "tone",
+        "at": 1,
+        "type": "sine",
+        "f0": 42.3,
+        "f1": 28,
+        "a": 0.01,
+        "hold": 0.22,
+        "d": 2.5,
+        "gain": 0.755
+      },
+      {
+        "op": "scatter",
+        "at": 1.05,
+        "dur": 2.2,
+        "count": 32,
+        "skew": 1.5,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "bandpass",
+            "f0": [
+              800,
+              3000
+            ],
+            "q": 2,
+            "d": [
+              0.01,
+              0.04
+            ],
+            "gain": [
+              0.03,
+              0.12
+            ],
+            "pan": [
+              -0.4,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "op": "burst",
+        "at": [
+          1.25,
+          1.4
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 500,
+        "f1": 150,
+        "a": 0.05,
+        "d": 1.85,
+        "gain": 0.255,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": [
+          1.7,
+          1.9
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 350,
+        "f1": 120,
+        "a": 0.08,
+        "d": 2.05,
+        "gain": 0.17,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": 1,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 900,
+        "a": 0.2,
+        "d": 2.5,
+        "gain": 0.4,
+        "wet": 0.4
+      }
+    ]
+  },
+  {
+    "id": "death.cruiser",
+    "group": "impact",
+    "label": "Cruiser destroyed",
+    "game": "Cruiser sunk.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 900,
+        "d": 0.07,
+        "gain": 0.6,
+        "drive": 5,
+        "wet": 0.6
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 3500,
+        "f1": 150,
+        "a": 0.004,
+        "hold": 0.09,
+        "d": 1.5,
+        "gain": 1,
+        "drive": 6,
+        "wet": 0.6
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 220,
+        "f1": 55,
+        "q": 0.9,
+        "a": 0.045,
+        "hold": 0.3,
+        "d": 2.95,
+        "gain": 0.9,
+        "wet": 0.6
+      },
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sine",
+        "f0": 47.5,
+        "f1": 28,
+        "a": 0.01,
+        "hold": 0.15,
+        "d": 1.8,
+        "gain": 0.65
+      },
+      {
+        "op": "scatter",
+        "at": 0.05,
+        "dur": 1.5,
+        "count": 21,
+        "skew": 1.5,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "bandpass",
+            "f0": [
+              800,
+              3000
+            ],
+            "q": 2,
+            "d": [
+              0.01,
+              0.04
+            ],
+            "gain": [
+              0.03,
+              0.12
+            ],
+            "pan": [
+              -0.4,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.25,
+          0.4
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 500,
+        "f1": 150,
+        "a": 0.05,
+        "d": 1.5,
+        "gain": 0.15,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.7,
+          0.9
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 350,
+        "f1": 120,
+        "a": 0.08,
+        "d": 1.7,
+        "gain": 0.1,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": 0.05,
+        "color": "white",
+        "filter": "bandpass",
+        "f0": 600,
+        "f1": 2500,
+        "q": 0.7,
+        "a": 0.05,
+        "d": 1.6,
+        "gain": 0.6,
+        "wet": 0.4
+      },
+      {
+        "op": "burst",
+        "at": 0.3,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 3000,
+        "a": 0.3,
+        "d": 2,
+        "gain": 0.15
+      },
+      {
+        "op": "scatter",
+        "at": 0.6,
+        "dur": 2,
+        "count": 20,
+        "skew": 1.2,
+        "steps": [
+          {
+            "op": "tone",
+            "type": "sine",
+            "f0": [
+              500,
+              1100
+            ],
+            "f1Mul": 2.2,
+            "d": 0.04,
+            "gain": 0.05
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "death.turret",
+    "group": "impact",
+    "label": "Turret destroyed",
+    "game": "Turret destroyed.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 900,
+        "d": 0.069,
+        "gain": 0.6,
+        "drive": 5,
+        "wet": 0.59
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 3440,
+        "f1": 150,
+        "a": 0.004,
+        "hold": 0.088,
+        "d": 1.46,
+        "gain": 1,
+        "drive": 6,
+        "wet": 0.59
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 220,
+        "f1": 55,
+        "q": 0.9,
+        "a": 0.044,
+        "hold": 0.292,
+        "d": 2.88,
+        "gain": 0.9,
+        "wet": 0.59
+      },
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sine",
+        "f0": 47.8,
+        "f1": 28,
+        "a": 0.01,
+        "hold": 0.146,
+        "d": 1.76,
+        "gain": 0.644
+      },
+      {
+        "op": "scatter",
+        "at": 0.05,
+        "dur": 1.46,
+        "count": 20,
+        "skew": 1.5,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "bandpass",
+            "f0": [
+              800,
+              3000
+            ],
+            "q": 2,
+            "d": [
+              0.01,
+              0.04
+            ],
+            "gain": [
+              0.03,
+              0.12
+            ],
+            "pan": [
+              -0.4,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.25,
+          0.4
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 500,
+        "f1": 150,
+        "a": 0.05,
+        "d": 1.48,
+        "gain": 0.144,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.7,
+          0.9
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 350,
+        "f1": 120,
+        "a": 0.08,
+        "d": 1.68,
+        "gain": 0.096,
+        "wet": 0.9
+      },
+      {
+        "op": "metal",
+        "at": 0,
+        "f": 180,
+        "d": 1.3,
+        "gain": 0.1,
+        "wet": 0.4
+      },
+      {
+        "op": "scatter",
+        "at": 0.35,
+        "dur": 1.6,
+        "count": 3,
+        "skew": 1,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "highpass",
+            "f0": 1500,
+            "d": 0.04,
+            "gain": [
+              0.2,
+              0.4
+            ],
+            "drive": 3,
+            "wet": 0.4
+          },
+          {
+            "op": "burst",
+            "color": "brown",
+            "filter": "lowpass",
+            "f0": 250,
+            "d": 0.3,
+            "gain": 0.4
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "death.structure",
+    "group": "impact",
+    "label": "Structure destroyed",
+    "game": "Factory, airport, helipad, or shipyard destroyed.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 900,
+        "d": 0.085,
+        "gain": 0.6,
+        "drive": 5,
+        "wet": 0.725
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 4250,
+        "f1": 150,
+        "a": 0.004,
+        "hold": 0.12,
+        "d": 2,
+        "gain": 1,
+        "drive": 6,
+        "wet": 0.725
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 220,
+        "f1": 55,
+        "q": 0.9,
+        "a": 0.058,
+        "hold": 0.4,
+        "d": 3.825,
+        "gain": 0.9,
+        "wet": 0.725
+      },
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sine",
+        "f0": 43.8,
+        "f1": 28,
+        "a": 0.01,
+        "hold": 0.2,
+        "d": 2.3,
+        "gain": 0.725
+      },
+      {
+        "op": "scatter",
+        "at": 0.05,
+        "dur": 2,
+        "count": 29,
+        "skew": 1.5,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "bandpass",
+            "f0": [
+              800,
+              3000
+            ],
+            "q": 2,
+            "d": [
+              0.01,
+              0.04
+            ],
+            "gain": [
+              0.03,
+              0.12
+            ],
+            "pan": [
+              -0.4,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.25,
+          0.4
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 500,
+        "f1": 150,
+        "a": 0.05,
+        "d": 1.75,
+        "gain": 0.225,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.7,
+          0.9
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 350,
+        "f1": 120,
+        "a": 0.08,
+        "d": 1.95,
+        "gain": 0.15,
+        "wet": 0.9
+      },
+      {
+        "op": "metal",
+        "at": 0,
+        "f": 90,
+        "d": 2.4,
+        "gain": 0.16,
+        "wet": 0.5
+      },
+      {
+        "op": "burst",
+        "at": 0.2,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 140,
+        "f1": 40,
+        "a": 0.08,
+        "d": 2.8,
+        "gain": 0.75,
+        "wet": 0.45
+      },
+      {
+        "op": "scatter",
+        "at": 0.15,
+        "dur": 1.8,
+        "count": 8,
+        "skew": 1.3,
+        "steps": [
+          {
+            "op": "metal",
+            "f": [
+              200,
+              900
+            ],
+            "d": [
+              0.3,
+              0.9
+            ],
+            "gain": [
+              0.03,
+              0.08
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "death.tree",
+    "group": "impact",
+    "label": "Tree felled",
+    "game": "A tree is brought down.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 2000,
+        "d": 0.04,
+        "gain": 0.6,
+        "drive": 2
+      },
+      {
+        "op": "scatter",
+        "at": 0,
+        "dur": 0.35,
+        "count": 8,
+        "skew": 1.2,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "bandpass",
+            "f0": [
+              1500,
+              3500
+            ],
+            "q": 3,
+            "d": 0.03,
+            "gain": [
+              0.1,
+              0.3
+            ]
+          }
+        ]
+      },
+      {
+        "op": "tone",
+        "at": 0.15,
+        "type": "sawtooth",
+        "f0": 90,
+        "f1": 55,
+        "a": 0.2,
+        "hold": 0.6,
+        "d": 0.5,
+        "gain": 0.25,
+        "filter": "bandpass",
+        "fc": 700,
+        "q": 6,
+        "vibrato": 4,
+        "vibratoRate": 9
+      },
+      {
+        "op": "burst",
+        "at": 0.6,
+        "color": "white",
+        "filter": "bandpass",
+        "f0": 600,
+        "f1": 2500,
+        "q": 0.8,
+        "a": 1.1,
+        "d": 0.3,
+        "gain": 0.3
+      },
+      {
+        "op": "burst",
+        "at": 1.95,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 300,
+        "f1": 70,
+        "d": 0.8,
+        "gain": 1,
+        "wet": 0.3
+      },
+      {
+        "op": "burst",
+        "at": 1.95,
+        "color": "white",
+        "filter": "bandpass",
+        "f0": 3000,
+        "q": 0.6,
+        "d": 0.8,
+        "gain": 0.25
+      },
+      {
+        "op": "scatter",
+        "at": 1.95,
+        "dur": 0.5,
+        "count": 10,
+        "skew": 1.5,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "bandpass",
+            "f0": [
+              1200,
+              3000
+            ],
+            "q": 3,
+            "d": 0.025,
+            "gain": [
+              0.05,
+              0.2
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "death.city",
+    "group": "impact",
+    "label": "City razed",
+    "game": "A city block is destroyed.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 900,
+        "d": 0.1,
+        "gain": 0.6,
+        "drive": 5,
+        "wet": 0.85
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 5000,
+        "f1": 150,
+        "a": 0.004,
+        "hold": 0.15,
+        "d": 2.5,
+        "gain": 1,
+        "drive": 6,
+        "wet": 0.85
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 220,
+        "f1": 55,
+        "q": 0.9,
+        "a": 0.07,
+        "hold": 0.5,
+        "d": 4.7,
+        "gain": 0.9,
+        "wet": 0.85
+      },
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sine",
+        "f0": 40,
+        "f1": 28,
+        "a": 0.01,
+        "hold": 0.25,
+        "d": 2.8,
+        "gain": 0.8
+      },
+      {
+        "op": "scatter",
+        "at": 0.05,
+        "dur": 2.5,
+        "count": 36,
+        "skew": 1.5,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "white",
+            "filter": "bandpass",
+            "f0": [
+              800,
+              3000
+            ],
+            "q": 2,
+            "d": [
+              0.01,
+              0.04
+            ],
+            "gain": [
+              0.03,
+              0.12
+            ],
+            "pan": [
+              -0.4,
+              0.4
+            ]
+          }
+        ]
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.25,
+          0.4
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 500,
+        "f1": 150,
+        "a": 0.05,
+        "d": 2,
+        "gain": 0.3,
+        "wet": 0.9
+      },
+      {
+        "op": "burst",
+        "at": [
+          0.7,
+          0.9
+        ],
+        "color": "pink",
+        "filter": "lowpass",
+        "f0": 350,
+        "f1": 120,
+        "a": 0.08,
+        "d": 2.2,
+        "gain": 0.2,
+        "wet": 0.9
+      },
+      {
+        "op": "metal",
+        "at": 0.05,
+        "f": 70,
+        "d": 2.8,
+        "gain": 0.14,
+        "wet": 0.55
+      },
+      {
+        "op": "burst",
+        "at": 0.3,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 100,
+        "f1": 35,
+        "a": 0.1,
+        "d": 3.2,
+        "gain": 0.8,
+        "wet": 0.5
+      },
+      {
+        "op": "scatter",
+        "at": 0.1,
+        "dur": 2.4,
+        "count": 14,
+        "skew": 1.4,
+        "steps": [
+          {
+            "op": "burst",
+            "color": "pink",
+            "filter": "bandpass",
+            "f0": [
+              400,
+              2000
+            ],
+            "q": 1.5,
+            "d": [
+              0.04,
+              0.12
+            ],
+            "gain": [
+              0.04,
+              0.12
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ui.select",
+    "group": "interface",
+    "label": "Select",
+    "game": "A unit is selected.",
+    "spatial": false,
+    "steps": [
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "triangle",
+        "f0": 740,
+        "f1": 1180,
+        "d": 0.045,
+        "gain": 0.14
+      }
+    ]
+  },
+  {
+    "id": "ui.move",
+    "group": "interface",
+    "label": "Move order",
+    "game": "A move order is accepted. The voice line carries the acknowledgement.",
+    "spatial": false,
+    "steps": [
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sine",
+        "f0": 660,
+        "d": 0.05,
+        "gain": 0.2
+      },
+      {
+        "op": "tone",
+        "at": 0.06,
+        "type": "sine",
+        "f0": 990,
+        "d": 0.08,
+        "gain": 0.2
+      }
+    ]
+  },
+  {
+    "id": "ui.attack",
+    "group": "interface",
+    "label": "Attack order",
+    "game": "An attack order is accepted.",
+    "spatial": false,
+    "steps": [
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "square",
+        "f0": 520,
+        "d": 0.05,
+        "gain": 0.15,
+        "filter": "lowpass",
+        "fc": 2500
+      },
+      {
+        "op": "tone",
+        "at": 0.06,
+        "type": "square",
+        "f0": 390,
+        "d": 0.06,
+        "gain": 0.15,
+        "filter": "lowpass",
+        "fc": 2500
+      },
+      {
+        "op": "tone",
+        "at": 0.12,
+        "type": "sawtooth",
+        "f0": 260,
+        "d": 0.12,
+        "gain": 0.18,
+        "filter": "lowpass",
+        "fc": 1800
+      }
+    ]
+  },
+  {
+    "id": "ui.click",
+    "group": "interface",
+    "label": "Click",
+    "game": "A button or build tile is clicked.",
+    "spatial": false,
+    "steps": [
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "triangle",
+        "f0": 1800,
+        "f1": 1200,
+        "d": 0.02,
+        "gain": 0.2
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 4000,
+        "d": 0.008,
+        "gain": 0.15
+      }
+    ]
+  },
+  {
+    "id": "ui.invalid",
+    "group": "interface",
+    "label": "Invalid",
+    "game": "The order is refused. A voice line gives the reason.",
+    "spatial": false,
+    "steps": [
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "square",
+        "f0": 130,
+        "hold": 0.1,
+        "d": 0.05,
+        "gain": 0.15,
+        "filter": "lowpass",
+        "fc": 1200
+      },
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sawtooth",
+        "f0": 137,
+        "hold": 0.1,
+        "d": 0.05,
+        "gain": 0.15,
+        "filter": "lowpass",
+        "fc": 1200
+      },
+      {
+        "op": "tone",
+        "at": 0.2,
+        "type": "square",
+        "f0": 130,
+        "hold": 0.1,
+        "d": 0.05,
+        "gain": 0.15,
+        "filter": "lowpass",
+        "fc": 1200
+      },
+      {
+        "op": "tone",
+        "at": 0.2,
+        "type": "sawtooth",
+        "f0": 137,
+        "hold": 0.1,
+        "d": 0.05,
+        "gain": 0.15,
+        "filter": "lowpass",
+        "fc": 1200
+      }
+    ]
+  },
+  {
+    "id": "ui.place",
+    "group": "interface",
+    "label": "Building placed",
+    "game": "A structure starts construction.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 300,
+        "f1": 80,
+        "a": 0.003,
+        "d": 0.35,
+        "gain": 0.9,
+        "drive": 2
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "pink",
+        "filter": "bandpass",
+        "f0": 500,
+        "q": 1.5,
+        "d": 0.12,
+        "gain": 0.35
+      },
+      {
+        "op": "metal",
+        "at": 0.01,
+        "f": 170,
+        "d": 0.4,
+        "gain": 0.08,
+        "wet": 0.2
+      },
+      {
+        "op": "burst",
+        "at": 0.18,
+        "color": "white",
+        "filter": "bandpass",
+        "f0": 1400,
+        "q": 4,
+        "d": 0.02,
+        "gain": 0.2
+      },
+      {
+        "op": "burst",
+        "at": 0.24,
+        "color": "white",
+        "filter": "bandpass",
+        "f0": 1100,
+        "q": 4,
+        "d": 0.025,
+        "gain": 0.25
+      }
+    ]
+  },
+  {
+    "id": "ui.construct",
+    "group": "interface",
+    "label": "Construction",
+    "game": "Played on a loop at the site while a structure is building.",
+    "spatial": true,
+    "repeatMs": 260,
+    "steps": [
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "brown",
+        "filter": "lowpass",
+        "f0": 400,
+        "d": 0.05,
+        "gain": 0.25
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "bandpass",
+        "f0": 1200,
+        "q": 2,
+        "d": 0.02,
+        "gain": 0.12
+      }
+    ]
+  },
+  {
+    "id": "ui.complete",
+    "group": "interface",
+    "label": "Construction complete",
+    "game": "A structure finishes. Pairs with the construction-complete voice line.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "triangle",
+        "f0": 523.25,
+        "hold": 0,
+        "d": 0.25,
+        "gain": 0.18,
+        "wet": 0.15
+      },
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "square",
+        "f0": 1046.5,
+        "hold": 0,
+        "d": 0.25,
+        "gain": 0.03,
+        "wet": 0.15
+      },
+      {
+        "op": "tone",
+        "at": 0.1,
+        "type": "triangle",
+        "f0": 659.25,
+        "hold": 0,
+        "d": 0.25,
+        "gain": 0.18,
+        "wet": 0.15
+      },
+      {
+        "op": "tone",
+        "at": 0.1,
+        "type": "square",
+        "f0": 1318.5,
+        "hold": 0,
+        "d": 0.25,
+        "gain": 0.03,
+        "wet": 0.15
+      },
+      {
+        "op": "tone",
+        "at": 0.2,
+        "type": "triangle",
+        "f0": 783.99,
+        "hold": 0,
+        "d": 0.25,
+        "gain": 0.18,
+        "wet": 0.15
+      },
+      {
+        "op": "tone",
+        "at": 0.2,
+        "type": "square",
+        "f0": 1567.98,
+        "hold": 0,
+        "d": 0.25,
+        "gain": 0.03,
+        "wet": 0.15
+      },
+      {
+        "op": "tone",
+        "at": 0.3,
+        "type": "triangle",
+        "f0": 1046.5,
+        "hold": 0.2,
+        "d": 0.6,
+        "gain": 0.18,
+        "wet": 0.4
+      },
+      {
+        "op": "tone",
+        "at": 0.3,
+        "type": "square",
+        "f0": 2093,
+        "hold": 0.2,
+        "d": 0.6,
+        "gain": 0.03,
+        "wet": 0.4
+      }
+    ]
+  },
+  {
+    "id": "ui.ready",
+    "group": "interface",
+    "label": "Unit ready",
+    "game": "A trained unit leaves the bay. Pairs with the unit-ready voice line.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "triangle",
+        "f0": 523.25,
+        "d": 0.12,
+        "gain": 0.16,
+        "wet": 0.15
+      },
+      {
+        "op": "tone",
+        "at": 0.09,
+        "type": "triangle",
+        "f0": 659.25,
+        "d": 0.12,
+        "gain": 0.16,
+        "wet": 0.15
+      },
+      {
+        "op": "tone",
+        "at": 0.18,
+        "type": "triangle",
+        "f0": 783.99,
+        "hold": 0.08,
+        "d": 0.28,
+        "gain": 0.18,
+        "wet": 0.3
+      }
+    ]
+  },
+  {
+    "id": "ui.credits-in",
+    "group": "interface",
+    "label": "Credits in",
+    "game": "Income tick. Loop while credits are arriving.",
+    "spatial": false,
+    "repeatMs": 70,
+    "steps": [
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sine",
+        "f0": 2400,
+        "d": 0.03,
+        "gain": 0.14
+      },
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "triangle",
+        "f0": 3600,
+        "d": 0.015,
+        "gain": 0.05
+      }
+    ]
+  },
+  {
+    "id": "ui.credits-out",
+    "group": "interface",
+    "label": "Credits out",
+    "game": "Spend tick. Loop while credits are leaving.",
+    "spatial": false,
+    "repeatMs": 70,
+    "steps": [
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "square",
+        "f0": 900,
+        "d": 0.025,
+        "gain": 0.08,
+        "filter": "lowpass",
+        "fc": 2500
+      },
+      {
+        "op": "burst",
+        "at": 0,
+        "color": "white",
+        "filter": "highpass",
+        "f0": 3000,
+        "d": 0.005,
+        "gain": 0.05
+      }
+    ]
+  },
+  {
+    "id": "ui.radar",
+    "group": "interface",
+    "label": "Radar alert",
+    "game": "Contact warning, with the under-attack voice line.",
+    "spatial": false,
+    "steps": [
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "sine",
+        "f0": 1200,
+        "d": 0.25,
+        "gain": 0.12,
+        "wet": 0.3
+      },
+      {
+        "op": "tone",
+        "at": 0.12,
+        "type": "square",
+        "f0": 880,
+        "d": 0.07,
+        "gain": 0.1,
+        "filter": "lowpass",
+        "fc": 3000
+      },
+      {
+        "op": "tone",
+        "at": 0.22,
+        "type": "square",
+        "f0": 660,
+        "d": 0.09,
+        "gain": 0.1,
+        "filter": "lowpass",
+        "fc": 3000
+      }
+    ]
+  },
+  {
+    "id": "ui.capture",
+    "group": "interface",
+    "label": "City captured",
+    "game": "A city flips. Pairs with the city-conquered voice line.",
+    "spatial": true,
+    "steps": [
+      {
+        "op": "tone",
+        "at": 0,
+        "type": "triangle",
+        "f0": 392,
+        "d": 0.09,
+        "gain": 0.16,
+        "wet": 0.25
+      },
+      {
+        "op": "tone",
+        "at": 0.1,
+        "type": "triangle",
+        "f0": 523.25,
+        "d": 0.09,
+        "gain": 0.16,
+        "wet": 0.25
+      },
+      {
+        "op": "tone",
+        "at": 0.2,
+        "type": "triangle",
+        "f0": 659.25,
+        "hold": 0.12,
+        "d": 0.4,
+        "gain": 0.18,
+        "wet": 0.4
+      },
+      {
+        "op": "tone",
+        "at": 0.2,
+        "type": "sine",
+        "f0": 196,
+        "hold": 0.12,
+        "d": 0.45,
+        "gain": 0.08,
+        "wet": 0.3
+      }
+    ]
+  }
+]

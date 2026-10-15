@@ -26,3 +26,6 @@ ai-trace.jsonl
 *.njsproj
 *.sln
 *.sw?
+
+
+temp/

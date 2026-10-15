@@ -11,6 +11,7 @@
     "server-inspect": "tsx watch --inspect src/server/listen.ts",
     "start": "tsx src/server/listen.ts",
     "client": "vite",
+    "audio-editor": "vite --config audio-editor/vite.config.ts",
     "build": "tsc && vite build && esbuild src/server/listen.ts --bundle --platform=node --format=esm --packages=external --outfile=build/server/listen.js",
     "preview": "vite preview",
     "test": "vitest run",

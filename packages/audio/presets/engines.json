@@ -1,0 +1,103 @@
+{
+  "units": {
+    "engine.scout": {
+      "label": "Scout",
+      "game": "Scout car while the engine is running",
+      "domain": "land",
+      "starter": "crank",
+      "core": { "wave": "sawtooth", "hz": [38, 140], "lp": [600, 2600], "q": 1.5, "drive": 2, "gain": 0.25, "chug": 0.25, "chugRatio": 0.5 },
+      "noise": { "color": "pink", "type": "bandpass", "f": [500, 1500], "q": 0.8, "gain": [0, 0.25] },
+      "gears": 4,
+      "accel": 0.6,
+      "decel": 0.8,
+      "startTime": 0.8,
+      "stopTime": 0.5
+    },
+    "engine.med-tank": {
+      "label": "Medium tank",
+      "game": "Medium tank while the engine is running",
+      "domain": "land",
+      "starter": "crank",
+      "core": { "wave": "sawtooth", "hz": [24, 60], "lp": [300, 1100], "q": 3, "drive": 3, "gain": 0.4, "chug": 0.6, "chugRatio": 0.5 },
+      "noise": { "color": "brown", "type": "lowpass", "f": [200, 400], "q": 0.7, "gain": [0, 0.4] },
+      "tracks": { "rate": 14, "f": 1500, "q": 5, "gain": 0.2 },
+      "accel": 0.25,
+      "decel": 0.45,
+      "startTime": 1.5,
+      "stopTime": 1.2
+    },
+    "engine.heavy-tank": {
+      "label": "Heavy tank",
+      "game": "Heavy tank while the engine is running",
+      "domain": "land",
+      "starter": "crank",
+      "core": { "wave": "square", "hz": [16, 38], "lp": [180, 600], "q": 4, "drive": 4, "gain": 0.5, "chug": 0.7, "chugRatio": 0.25 },
+      "noise": { "color": "brown", "type": "lowpass", "f": [120, 250], "q": 0.7, "gain": [0, 0.6] },
+      "tracks": { "rate": 8, "f": 800, "q": 3, "gain": 0.35 },
+      "accel": 0.15,
+      "decel": 0.3,
+      "startTime": 2.2,
+      "stopTime": 1.8
+    },
+    "engine.artillery": {
+      "label": "Artillery",
+      "game": "Artillery tractor while the engine is running",
+      "domain": "land",
+      "starter": "crank",
+      "core": { "wave": "sawtooth", "hz": [28, 72], "lp": [280, 900], "q": 2.4, "drive": 2.5, "gain": 0.32, "chug": 0.45, "chugRatio": 0.5 },
+      "noise": { "color": "brown", "type": "lowpass", "f": [180, 380], "q": 0.7, "gain": [0, 0.32] },
+      "tracks": { "rate": 11, "f": 1200, "q": 4, "gain": 0.16 },
+      "accel": 0.22,
+      "decel": 0.4,
+      "startTime": 1.3,
+      "stopTime": 1
+    },
+    "engine.gunship": {
+      "label": "Gunship",
+      "game": "Gunship rotor, on the pad or in the air",
+      "domain": "air",
+      "starter": "turbine",
+      "alt": 1.5,
+      "core": { "wave": "triangle", "hz": [70, 95], "lp": [300, 400], "q": 1, "gain": 0.08 },
+      "noise": { "color": "pink", "type": "lowpass", "f": [350, 700], "q": 1.5, "gain": [0.7, 0.9], "by": "rpm" },
+      "rotor": { "rate": [12, 17] },
+      "accel": 0.6,
+      "decel": 0.5,
+      "startTime": 1.6,
+      "stopTime": 2.5
+    },
+    "engine.jet": {
+      "label": "Jet",
+      "game": "Jet turbine, on the runway or in the air",
+      "domain": "air",
+      "starter": "turbine",
+      "alt": 2.6,
+      "core": { "wave": "sawtooth", "hz": [55, 100], "lp": [250, 550], "q": 1, "gain": 0.12 },
+      "noise": { "color": "pink", "type": "lowpass", "f": [500, 2500], "q": 0.5, "gain": [0.25, 0.8], "by": "rpm" },
+      "accel": 0.7,
+      "decel": 0.5,
+      "startTime": 1.2,
+      "stopTime": 2
+    },
+    "engine.cruiser": {
+      "label": "Cruiser",
+      "game": "Cruiser diesel while the ship is underway or idling",
+      "domain": "water",
+      "starter": "crank",
+      "core": { "wave": "square", "hz": [30, 80], "lp": [250, 900], "q": 1.5, "drive": 2.5, "gain": 0.3, "chug": 0.8, "chugRatio": 0.2 },
+      "noise": { "color": "white", "type": "bandpass", "f": [600, 1400], "q": 0.6, "gain": [0.05, 0.45], "swell": 0.4 },
+      "accel": 0.3,
+      "decel": 0.12,
+      "startTime": 1,
+      "stopTime": 0.8
+    }
+  },
+  "terrains": {
+    "road": { "label": "Road", "rumbleF": 1.5, "rumbleG": 0.35, "clank": 1.25, "load": 0, "grit": 0 },
+    "grass": { "label": "Open ground", "rumbleF": 0.7, "rumbleG": 0.5, "clank": 0.7, "load": 0.1, "grit": 0 },
+    "forest": { "label": "Forest", "rumbleF": 0.55, "rumbleG": 0.65, "clank": 0.55, "load": 0.3, "grit": 0.15 },
+    "town": { "label": "Town", "rumbleF": 1.3, "rumbleG": 0.45, "clank": 1.1, "load": 0.05, "grit": 0.25 },
+    "scar": { "label": "Shelled ground", "rumbleF": 1.8, "rumbleG": 0.75, "clank": 0.9, "load": 0.15, "grit": 0.85 },
+    "water": { "label": "Water", "rumbleF": 0.5, "rumbleG": 1, "clank": 0.4, "load": 0.5, "grit": 0 }
+  }
+}

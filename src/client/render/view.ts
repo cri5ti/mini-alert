@@ -15,6 +15,7 @@ import { Particles } from './particles.ts'
 import { ShotLayer } from './shots.ts'
 import { TILE_TOP } from './terrain.ts'
 import { buildSurface } from './island.ts'
+import { sound } from '../sound.ts'
 import { ScarLayer } from './scars.ts'
 import { createUnitMesh, releaseMesh, scorchUnit, syncUnitMesh, unitSpan } from './units/vehicle.ts'
 
@@ -202,6 +203,10 @@ export class GameView {
 
   focus(x: number, z: number) {
     this.stage.focus(x, z)
+  }
+
+  ear(): { x: number; z: number; yaw: number; zoom: number; span: number } {
+    return this.stage.ear()
   }
 
   resize() {
@@ -484,7 +489,10 @@ export class GameView {
     if (!props || tiles.length === 0) return
     const fell = props.hideTrees(tiles)
     if (!burst) return
-    for (const spot of fell) this.particles.fell(spot.x, spot.z)
+    for (const spot of fell) {
+      this.particles.fell(spot.x, spot.z)
+      sound.tree(spot.x, spot.z)
+    }
   }
 
   private wreck(group: Group) {

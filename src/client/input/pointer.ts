@@ -5,6 +5,7 @@ import { canPlaceFootprint } from '../../shared/footprint.ts'
 import type { UnitSnapshot } from '../../shared/protocol.ts'
 import type { Terrain, TileCoord } from '../../shared/tiles.ts'
 import { MoveDomain, spanOf, UNIT_TYPES, UnitTypeId } from '../../shared/unit-types.ts'
+import { sound } from '../sound.ts'
 import { cursorFor } from './cursor.ts'
 import { bindGroupKeys } from './groups.ts'
 import { bindPanKeys, typing } from './keys.ts'
@@ -459,8 +460,12 @@ export function orderAt(
 function placeAt(tile: TileCoord, replica: Replica, player: Commander, view: GameView) {
   if (player.raisingCity()) {
     player.setAim(tile)
-    if (!replica.canRaise(tile)) return
+    if (!replica.canRaise(tile)) {
+      sound.unable()
+      return
+    }
     player.placeCity(tile)
+    sound.click()
     view.showPlacement(null)
     return
   }
@@ -470,9 +475,16 @@ function placeAt(tile: TileCoord, replica: Replica, player: Commander, view: Gam
   const terrainAt = (x: number, y: number) => world.terrain[y * world.width + x] as Terrain
   const span = spanOf(UNIT_TYPES[typeId])
   const domain = typeId === UnitTypeId.Shipyard ? MoveDomain.Water : MoveDomain.Ground
-  if (!canPlaceFootprint(tile, span.x, world.width, world.height, terrainAt, replica.units, span.y, domain)) return
-  if (!replica.nearCity(tile, span.x, span.y)) return
+  if (!canPlaceFootprint(tile, span.x, world.width, world.height, terrainAt, replica.units, span.y, domain)) {
+    sound.unable()
+    return
+  }
+  if (!replica.nearCity(tile, span.x, span.y)) {
+    sound.unable()
+    return
+  }
   player.placeBuilding(tile)
+  sound.click()
   view.showPlacement(null)
 }
 
@@ -493,25 +505,34 @@ function applyClick(
     player.toggle(picked.id)
   } else if (force && ownStanding && standing) {
     player.orderAttack(standing.id)
+    sound.attack()
     view.ping(standing.x, standing.z, true)
   } else if (force && tile) {
     player.orderAttackGround(tile)
+    sound.attack()
     view.ping(tile.x + 0.5, tile.y + 0.5, true)
   } else if (standing && standing.ownerId !== replica.playerId && player.commanding()) {
     player.orderAttack(standing.id)
+    sound.attack()
     view.ping(standing.x, standing.z, true)
   } else if (picked && picked.ownerId === replica.playerId && replica.homePad(picked, player.selected())) {
     const pad = { x: picked.tileX, y: picked.tileY }
     view.pingMoves(player.orderMove(pad))
+    sound.move()
   } else if (picked && picked.ownerId === replica.playerId) {
     player.select(picked.id)
   } else if (hall !== null) {
     player.selectCity(hall)
+    sound.click()
   } else if (tile && player.factorySelected() && replica.isOpen(tile, [])) {
     player.setRally(tile)
+    sound.click()
     view.ping(tile.x + 0.5, tile.y + 0.5, false)
   } else if (tile && player.commanding() && replica.canCommand(tile, player.selected())) {
     view.pingMoves(player.orderMove(tile))
+    sound.move()
+  } else if (tile && player.commanding()) {
+    sound.invalid()
   }
 }
 

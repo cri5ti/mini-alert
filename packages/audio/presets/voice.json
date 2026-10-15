@@ -1,0 +1,74 @@
+{
+  "rate": 1.25,
+  "pitch": 1,
+  "voice": "onyx",
+  "radio": {
+    "enabled": true,
+    "highpass": 300,
+    "lowpass": 3400,
+    "drive": 2,
+    "gain": 0.8,
+    "squelchGain": 0.12,
+    "squelchF": 1800,
+    "squelchTone": 1200,
+    "squelchToneGain": 0.04,
+    "squelchLead": 0.08
+  },
+  "phrases": [
+    {
+      "id": "yes-sir",
+      "game": "Acknowledges a move order. Plays on almost every move.",
+      "lines": ["Yes sir", "Right away", "On our way", "Moving out", "Understood"]
+    },
+    {
+      "id": "affirmative",
+      "game": "Acknowledges an attack order. Plays on almost every attack.",
+      "lines": ["Affirmative", "Engaging", "Target acquired", "Attacking", "Weapons free"]
+    },
+    {
+      "id": "under-attack",
+      "game": "The player's units come under fire, a few times a fight.",
+      "lines": ["We're under attack", "Taking fire", "Incoming fire", "We're being hit"]
+    },
+    {
+      "id": "not-enough-population",
+      "game": "Training or building is blocked by supply. Repeats if the button is mashed.",
+      "lines": ["Not enough population", "Population limit reached", "Need more population"]
+    },
+    {
+      "id": "not-enough-credits",
+      "game": "Training or building is blocked by credits. Repeats if the button is mashed.",
+      "lines": ["Not enough credits", "Insufficient credits", "We can't afford that"]
+    },
+    {
+      "id": "city-conquered",
+      "game": "A city finishes falling to the player.",
+      "lines": ["City conquered", "City secured", "City is ours"]
+    },
+    {
+      "id": "unable-to-deploy",
+      "game": "A building site is blocked. Repeats while placing.",
+      "lines": ["Unable to deploy", "Can't build there", "Site blocked"]
+    },
+    {
+      "id": "unit-ready",
+      "game": "A trained unit leaves the bay. One line per unit.",
+      "lines": ["Unit ready", "Ready to move", "Unit deployed", "Standing by"]
+    },
+    {
+      "id": "construction-complete",
+      "game": "A structure finishes building.",
+      "lines": ["Construction complete", "Building complete", "Structure ready"]
+    },
+    {
+      "id": "victory",
+      "game": "The match is won. Once.",
+      "lines": ["Victory"]
+    },
+    {
+      "id": "defeat",
+      "game": "The match is lost. Once.",
+      "lines": ["Defeat"]
+    }
+  ]
+}

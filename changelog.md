@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7
+- Sound effects.
+- Procedural music based on game play.
+
 ## 0.6
 - F1 onward queues the build and train tiles. The key sits in the bottom-right of each tile.
 - Improved cities, growth, density, growth / income control
